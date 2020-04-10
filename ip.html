@@ -60,7 +60,11 @@
   }
 </style>
 <script>
-  fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}").then(r => r.text())
+  fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
+    headers: {
+      Accept: "text/plain"
+    }
+  }).then(r => r.text())
     .then(data => {
       // Have other protocol IP address
       let other = document.querySelector('#other-ip');
