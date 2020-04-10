@@ -11,7 +11,9 @@ import (
 )
 
 var (
-	flagListen = flag.String("listen", ":http-alt", "[ip]:port to listen for HTTP connections on")
+	flagListen = flag.String("listen", ":8080", "[ip]:port to listen for HTTP connections on")
+	flagV4Host = flag.String("v4-host", "127.0.0.1:8080", "Host for IPv4 access")
+	flagV6Host = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
 )
 
 var ipTmpl = template.Must(template.ParseFiles("ip.html"))
@@ -107,6 +109,8 @@ func ip(w http.ResponseWriter, req *http.Request) {
 		"RemoteAddr": remoteAddr,
 		"RequestCount": rConn.read.count,
 		"Request": string(rConn.read.read),
+		"V4Host": *flagV4Host,
+		"V6Host": *flagV6Host,
 	})
 
 	if err != nil {

@@ -37,8 +37,12 @@
     color: green;
   }
 
-  .details {
+  #extra-ip, #only-ip, .details {
     margin-top: 2em;
+  }
+
+  #extra-ip, #only-ip {
+    display: none;
   }
 
   pre.request {
@@ -55,6 +59,22 @@
     font-size: 90%;
   }
 </style>
+<script>
+  fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}").then(r => r.text())
+    .then(data => {
+      // Have other protocol IP address
+      let other = document.querySelector('#other-ip');
+      other.textContent = "{{ if .IPv4 }}IPv6{{ else }}IPv4{{ end }} address: "
+      let ip = document.createElement("b");
+      ip.textContent = data;
+      other.appendChild(ip)
+      document.querySelector('#extra-ip').style.display = 'block';
+    })
+    .catch(error => {
+      // error => Don't have other protocol.
+      document.querySelector('#only-ip').style.display = 'block';
+    });
+</script>
 <body>
   <header>
     <h1>What's my <a href="https://en.wikipedia.org/wiki/IP_address">IP address</a>?</h1>
@@ -65,6 +85,14 @@
       {{ else if .IPv6 }}You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>: <div class="ipv6">{{ .IPv6 }}</div>
       {{ end }}
       <!-- TODO: links to whois, etc. what's a good site? -->
+    </div>
+
+    <div id="extra-ip">
+      Your browser preferred using {{ if .IPv4 }}IPv4{{else}}IPv6{{end}} but you also have a <span id="other-ip"></span>
+    </div>
+
+    <div id="only-ip">
+      You do not appear to have any {{ if .IPv4 }}IPv6{{else}}IPv4{{end}} connectivity.
     </div>
 
     <div class="details">
