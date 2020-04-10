@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<title>ip.d.cx: What's my IP address?</title>
+<!-- TODO: dark mode! -->
+<style>
+  h1 {
+    text-align: center;
+    padding-bottom: .2rem;
+    border-bottom: 2px solid goldenrod;
+    margin-bottom: 1.2rem;
+  }
+
+  h1 a, .ip a {
+    color: black;
+  }
+
+  article {
+    margin: 0 auto;
+    width: 60%;
+  }
+
+  .ip {
+    text-align: center;
+    font-size: 150%;
+  }
+
+  .ipv4, .ipv6 {
+    font-size: 220%;
+    font-weight: bold;
+  }
+
+  .ipv4 {
+    color: red;
+  }
+
+  .ipv6 {
+    color: green;
+  }
+
+  .details {
+    margin-top: 2em;
+  }
+
+  pre.request {
+    width: 100%;
+    overflow-y: scroll;
+    padding: 4px;
+    border: 1px solid #ccc;
+    background: #f0f0f0;
+  }
+
+  footer, footer a {
+    color: #ccc;
+    text-align: center;
+    font-size: 90%;
+  }
+</style>
+<body>
+  <header>
+    <h1>What's my <a href="https://en.wikipedia.org/wiki/IP_address">IP address</a>?</h1>
+  </header>
+  <article>
+    <div class="ip">
+      {{ if .IPv4 }}You're using <a href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>: <div class="ipv4">{{ .IPv4 }}</div>
+      {{ else if .IPv6 }}You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>: <div class="ipv6">{{ .IPv6 }}</div>
+      {{ end }}
+      <!-- TODO: links to whois, etc. what's a good site? -->
+    </div>
+
+    <div class="details">
+      <h3>HTTP connection details</h3>
+      Source <abbr title="Transmission Control Protocol, the layer above HTTP">TCP</abbr> port: <b>{{ .RemoteAddr.Port }}</b><br>
+      Number of <abbr title="HTTP requests over the same TCP connection due to keep-alive, reload quickly and see this increase, maybe!">requests</abbr> over this connection: <b>{{ .RequestCount }}</b><br>
+      <!--
+      Remote host: <b id="remotehost" title="Looking up...">⏳</b><br>
+      -->
+      <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">HTTP request</abbr>:
+      <pre class="request">{{ .Request }}</pre>
+    </div>
+  </article>
+  <footer>
+    code on <a href="https://github.com/dgl/ip.d.cx">github</a>
+  </footer>
+</body>
