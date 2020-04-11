@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ip.d.cx: What's my IP address?</title>
-<!-- TODO: dark mode! -->
+<title>{{ .Host }}: What's my IP address?</title>
 <style>
   h1 {
     text-align: center;
@@ -49,7 +48,7 @@
     margin-top: 2em;
   }
 
-  #extra-ip, #only-ip {
+  .hidden, #extra-ip, #only-ip {
     display: none;
   }
 
@@ -86,6 +85,63 @@
       // error => Don't have other protocol.
       document.querySelector('#only-ip').style.display = 'block';
     });
+
+  const dnsErrors = ["NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP",
+    "REFUSED", "YXDOMAIN", "XRRSET", "NOTAUTH", "NOTZONE"];
+
+  async function resolve(name, type="PTR") {
+    return fetch("https://dns.google/resolve?name=" + encodeURIComponent(name)  + "&type=" + type)
+      .then(r => r.json());
+  }
+
+  async function ipv4details(ip) {
+    let parts = ip.split('.');
+    let name = parts.reverse().join('.') + ".in-addr.arpa";
+    let result = await resolve(name);
+    let details = document.querySelector("#ipv4-details");
+    if (result.Status != 0) { // !OK
+      details.querySelector(".host").textContent = "none, got " + dnsErrors[result.Status];
+      return;
+    }
+    details.querySelector(".host").textContent = result.Answer[0].data;
+  }
+
+  async function ipv6details(ip) {
+    let result = await resolve(ipv6reverse(ip));
+    let details = document.querySelector("#ipv6-details");
+    if (result.Status != 0) { // !OK
+      details.querySelector(".host").textContent = "none, got " + dnsErrors[result.Status];
+      return;
+    }
+    details.querySelector(".host").textContent = result.Answer[0].data;
+  }
+
+  function ipv6reverse(ip) {
+    // Need to decompose IP into single hex digits, for ip6.arpa lookup
+    let parts = ip.split('::');
+    // Resolve "::" first
+    let expanded = parts[0].split(':');
+    if (parts.length > 1) {
+      let left = parts[0].split(':');
+      let right = parts[1].split(':');
+      // Need 8 of 4 nibble parts (i.e. delimited by ':')
+      let needed = 8 - (right.length - left.length);
+      let add = new Array(needed);
+      add.fill('0');
+      expanded = [left, add, right].flat();
+    }
+    return expanded.map(part => ("0".repeat(4 - part.length) + part).split('')).flat().reverse().join('.')
+      + ".ip6.arpa";
+  }
+</script>
+<script>
+  {{ if .IPv4 }}
+    ipv4details("{{.IPv4}}");
+    document.title = "{{ .Host }}: {{ .IPv4 }}";
+  {{ else }}
+    ipv6details("{{.IPv6}}");
+    document.title = "{{ .Host }}: {{ .IPv6 }}";
+  {{ end }}
 </script>
 <body>
   <header>
@@ -96,15 +152,28 @@
       {{ if .IPv4 }}You're using <a href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>: <div class="ipv4">{{ .IPv4 }}</div>
       {{ else if .IPv6 }}You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>: <div class="ipv6">{{ .IPv6 }}</div>
       {{ end }}
-      <!-- TODO: links to whois, etc. what's a good site? -->
     </div>
 
     <div id="extra-ip">
-      Your browser preferred using {{ if .IPv4 }}IPv4{{else}}IPv6{{end}} but you also have a <span id="other-ip"></span>
+      Your browser preferred using {{ if .IPv4 }}IPv4{{else}}IPv6{{end}} but you also have an <span id="other-ip"></span>
     </div>
 
     <div id="only-ip">
       You do not appear to have any {{ if .IPv4 }}IPv6{{else}}IPv4{{end}} connectivity.
+    </div>
+
+    <div id="ipv4-details" class="details {{if not .IPv4}}hidden{{end}}">
+      <h3>IPv4 details</h3>
+      Reverse DNS: <span class="host"></span>
+      <br>
+      > <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
+    </div>
+
+    <div id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
+      <h3>IPv6 details</h3>
+      Reverse DNS: <span class="host"></span>
+      <br>
+      > <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
     </div>
 
     <div class="details">
