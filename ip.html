@@ -107,26 +107,25 @@
     let parts = ip.split('.');
     let name = parts.reverse().join('.') + ".in-addr.arpa";
     let result = await resolve(name);
-    let details = document.querySelector("#ipv4-details");
-    details.style.display = 'block';
-    details.querySelector("a").href = "https://bgp.he.net/ip/" + ip;
-    if (result.Status != 0) { // !OK
-      details.querySelector(".host").textContent = "none, got " + dnsErrors[result.Status];
-      return;
-    }
-    details.querySelector(".host").textContent = result.Answer[0].data;
+    displayIPDetails('#ipv4-details', ip, result);
   }
 
   async function ipv6details(ip) {
     let result = await resolve(ipv6reverse(ip));
-    let details = document.querySelector("#ipv6-details");
+    displayIPDetails('#ipv6-details', ip, result);
+  }
+
+  function displayIPDetails(selector, ip, result) {
+    let details = document.querySelector(selector);
     details.style.display = 'block';
     details.querySelector("a").href = "https://bgp.he.net/ip/" + ip;
+    let host = details.querySelector(".host");
     if (result.Status != 0) { // !OK
-      details.querySelector(".host").textContent = "none, got " + dnsErrors[result.Status];
+      host.textContent = "none, got " + dnsErrors[result.Status];
       return;
     }
-    details.querySelector(".host").textContent = result.Answer[0].data;
+    host.textContent = result.Answer[0].data;
+    host.style.fontWeight = 'bold';
   }
 
   function ipv6reverse(ip) {
@@ -177,27 +176,31 @@
 
     <div id="ipv4-details" class="details {{if not .IPv4}}hidden{{end}}">
       <h3>IPv4 details</h3>
-      Reverse DNS: <span class="host"></span>
+      Reverse DNS: <span class="host">⏳</span>
       <br>
       ↝ <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
     </div>
 
     <div id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
       <h3>IPv6 details</h3>
-      Reverse DNS: <span class="host"></span>
+      Reverse DNS: <span class="host">⏳</span>
       <br>
       ↝ <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
     </div>
 
     <div class="details">
       <h3>HTTP connection details</h3>
-      Source <abbr title="Transmission Control Protocol, the layer above HTTP">TCP</abbr> port: <b>{{ .RemoteAddr.Port }}</b><br>
-      Number of <abbr title="HTTP requests over the same TCP connection due to keep-alive, reload quickly and see this increase, maybe!">requests</abbr> over this connection: <b>{{ .RequestCount }}</b><br>
-      <!--
-      Remote host: <b id="remotehost" title="Looking up...">⏳</b><br>
-      -->
-      <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">HTTP request</abbr>:
+
+      Source <abbr title="Transmission Control Protocol, the layer below HTTP">
+        TCP</abbr> port: <b>{{ .RemoteAddr.Port }}</b><br>
+
+      <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">
+        HTTP request</abbr>:
       <pre class="request">{{ .Request }}</pre>
+
+      Number of <abbr title="HTTP requests over the same TCP connection due to keep-alive, reload quickly and see this increase, maybe!">
+        requests</abbr> over this connection: <b>{{ .RequestCount }}</b>
+      <br>
     </div>
   </article>
   <footer>
