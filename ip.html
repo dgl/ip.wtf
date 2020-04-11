@@ -278,16 +278,24 @@
         }
       }
       // Remote
-      if (/c=IN IP(\d+) ([^\s]+)/.test(desc.sdp)) {
+      if (/a=candidate:\d+ \d+ (\w+) \S+ ((?:\d+\.){3}\d+|[a-f0-9:]+) (\d+)/.test(desc.sdp) || /c=IN IP(\d+) ([^\s]+)/.test(desc.sdp)) {
         let protocol = RegExp.$1;
         let ip = RegExp.$2;
+        let port = RegExp.$3;
         out.appendChild(document.createTextNode("Source IP address: "));
         let b = document.createElement("b");
         b.textContent = ip;
         b.title = desc.sdp;
         out.appendChild(b);
         out.appendChild(document.createElement("br"));
-        if ((protocol == 4 && ip != ipv4) || (protocol == 6 && ip != ipv6)) {
+        if (port) {
+          out.appendChild(document.createTextNode("Source port: "));
+          b = document.createElement("b");
+          b.textContent = port;
+          out.appendChild(b);
+          out.appendChild(document.createElement("br"));
+        }
+        if (ip != ipv4 && ip != ipv6) {
           out.appendChild(document.createTextNode(
             "Warning: IP found via WebRTC differs to HTTP IP, potential leakage!"));
         }
