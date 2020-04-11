@@ -231,7 +231,7 @@
     let req = el.textContent;
     let i = 0;
     el.textContent = "";
-    for (let line of req.split('\n')) {
+    for (let line of req.replace(/\n$/, '').split('\n')) {
       if (i == 0) {
         if (line.match(/(\w+)/)) {
           let verb = RegExp.$1;
