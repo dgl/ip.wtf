@@ -173,7 +173,8 @@
     details.appendChild(summary);
     summary.textContent = name + ": ";
     let items = document.createElement("b");
-    items.textContent = interesting.map(item => item + ": " + ref[item]).join(", ");
+    items.textContent = interesting.filter(item => ref[item])
+      .map(item => item + ": " + ref[item]).join(", ");
     summary.appendChild(items);
     let docsEl = document.createElement("a");
     docsEl.textContent = "Documention for " + name + " on MDN";
@@ -278,7 +279,7 @@
 
       <div id="navigator-basic-details"></div>
       <script>
-        dump("#navigator-basic-details", "navigator", window.navigator, ["vendor", "hardwareConcurrency", "deviceMemory"],
+        dump("#navigator-basic-details", "navigator", window.navigator, ["vendor", "platform", "hardwareConcurrency", "deviceMemory"],
           "https://developer.mozilla.org/en-US/docs/Web/API/Navigator");
       </script>
 
