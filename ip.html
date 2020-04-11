@@ -117,8 +117,10 @@
       document.querySelector('#extra-ip').style.display = 'block';
       if (/:/.test(data)) {
         ipv6details(data);
+        ipv6 = data;
       } else {
         ipv4details(data);
+        ipv4 = data;
       }
     })
     .catch(error => {
@@ -258,16 +260,78 @@
       i++;
     }
   }
+
+  function establishWebRTC(selector) {
+    if (!window.RTCPeerConnection) {
+      document.querySelector(selector).textContent = "No WebRTC support.";
+      return;
+    }
+    let foundConn = function(out, desc) {
+      // Local
+      if (/ IN IP(\d+) ([^\s]+)/.test(desc.sdp)) {
+        // Most browsers seem to just send 127.0.0.1 to avoid local leakage now
+        let protocol = RegExp.$1;
+        let ip = RegExp.$2;
+        if (ip != "127.0.0.1" && ip != "::1") {
+          out.appendChild(document.createTextNode("Local (internal) address: " + ip));
+          out.appendChild(document.createElement("br"));
+        }
+      }
+      // Remote
+      if (/c=IN IP(\d+) ([^\s]+)/.test(desc.sdp)) {
+        let protocol = RegExp.$1;
+        let ip = RegExp.$2;
+        out.appendChild(document.createTextNode("Source IP address: "));
+        let b = document.createElement("b");
+        b.textContent = ip;
+        b.title = desc.sdp;
+        out.appendChild(b);
+        out.appendChild(document.createElement("br"));
+        if ((protocol == 4 && ip != ipv4) || (protocol == 6 && ip != ipv6)) {
+          out.appendChild(document.createTextNode(
+            "Warning: IP found via WebRTC differs to HTTP IP, potential leakage!"));
+        }
+      }
+    };
+    let conn = new RTCPeerConnection({
+      iceServers: [{urls: ["stun:stun.l.google.com:19302"]}]});
+    conn.createDataChannel('ip');
+
+    let candidate = false;
+    conn.onicecandidate = e => {
+      candidate = true;
+      let out = document.querySelector(selector);
+      out.textContent = "";
+      if (conn.pendingLocalDescription) {
+        foundConn(out, conn.pendingLocalDescription);
+      } else {
+        foundConn(out, conn.localDescription);
+      }
+    };
+    conn.onicecandidateerror = e => {
+      if (candidate) {
+        return;
+      }
+      let out = document.querySelector(selector);
+      out.textContent = "Error establishing WebRTC connection: " + e.errorText;
+    };
+    conn.createOffer({}).then(desc => conn.setLocalDescription(desc));
+  }
 </script>
+
 <script>
+  var ipv4 = "", ipv6 = "";
   {{ if .IPv4 }}
     ipv4details("{{.IPv4}}");
+    ipv4 = "{{ .IPv4 }}";
     document.title = "{{ .Host }}: {{ .IPv4 }}";
   {{ else }}
     ipv6details("{{.IPv6}}");
+    ipv6 = "{{ .IPv6 }}";
     document.title = "{{ .Host }}: {{ .IPv6 }}";
   {{ end }}
 </script>
+
 <body>
   <header>
     <h1>What's my <a href="https://en.wikipedia.org/wiki/IP_address">IP address</a>?</h1>
@@ -347,6 +411,17 @@
           navigator.getBattery().then(
             battery => dump("#battery-details", "navigator.getBattery()", battery, ["charging", "level"],
               "https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getBattery"));
+      </script>
+    </div>
+
+    <div class="details">
+      <h3>WebRTC connection</h3>
+      <div id="webrtc-details">
+        <small id="webrtc-loading">Attempting to establish a WebRTC connection
+          (may result in bypassing some VPNs...)</small>
+      </div>
+      <script>
+        establishWebRTC("#webrtc-details");
       </script>
     </div>
 
