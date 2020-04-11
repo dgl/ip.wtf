@@ -64,6 +64,27 @@
     background: #f0f0f0;
   }
 
+  details {
+    margin-bottom: .5em;
+  }
+
+  details a {
+    padding-left: 1em;
+  }
+
+  summary:focus {
+    outline: none;
+  }
+
+  details ul {
+    list-style: none;
+  }
+
+  details ul li {
+    margin-left: 1em;
+    text-indent: -1em;
+  }
+
   footer, footer a {
     color: #ccc;
     text-align: center;
@@ -145,6 +166,55 @@
     return expanded.map(part => ("0".repeat(4 - part.length) + part).split('')).flat().reverse().join('.')
       + ".ip6.arpa";
   }
+
+  function dump(selector, name, ref, interesting, docs) {
+    let details = document.createElement("details");
+    let summary = document.createElement("summary");
+    details.appendChild(summary);
+    summary.textContent = name + ": ";
+    let items = document.createElement("b");
+    items.textContent = interesting.map(item => item + ": " + ref[item]).join(", ");
+    summary.appendChild(items);
+    let docsEl = document.createElement("a");
+    docsEl.textContent = "Documention for " + name + " on MDN";
+    docsEl.href = docs;
+    details.appendChild(docsEl);
+    details.addEventListener("toggle", event => {
+      if (details.open) {
+        function dumpInner(parent, ref, n) {
+          let output = false;
+          let ul = document.createElement("ul");
+          let items = [];
+          for (const item in ref) {
+            items.push(item);
+          }
+          for (const item of items.sort()) {
+            if (typeof(ref[item]) == "function") {
+              continue;
+            }
+            let el = document.createElement("li");
+            el.textContent = item + ": " + ref[item];
+            if (ref[item] && !output) {
+              output = true;
+            }
+            if (typeof(ref[item]) == "object" && n < 2) {
+              if (!dumpInner(el, ref[item], n+1)) {
+                // nothing interesting, drop this too
+                continue;
+              }
+            }
+            ul.appendChild(el);
+          }
+          parent.appendChild(ul);
+          return output;
+        }
+        dumpInner(details, ref, 0);
+      } else {
+        details.removeChild(details.querySelector("ul"));
+      }
+    });
+    document.querySelector(selector).appendChild(details);
+  }
 </script>
 <script>
   {{ if .IPv4 }}
@@ -202,6 +272,38 @@
         requests</abbr> over this connection: <b>{{ .RequestCount }}</b>
       <br>
     </div>
+
+    <div class="details">
+      <h3>Browser details</h3>
+
+      <div id="navigator-basic-details"></div>
+      <script>
+        dump("#navigator-basic-details", "navigator", window.navigator, ["vendor", "hardwareConcurrency", "deviceMemory"],
+          "https://developer.mozilla.org/en-US/docs/Web/API/Navigator");
+      </script>
+
+      <div id="screen-details"></div>
+      <script>
+        dump("#screen-details", "window.screen", window.screen, ["width", "height"],
+          "https://developer.mozilla.org/en-US/docs/Web/API/Window/screen");
+      </script>
+
+      <div id="connection-details"></div>
+      <script>
+        if (navigator.connection)
+          dump("#connection-details", "navigator.connection", navigator.connection, ["effectiveType", "rtt", "downlink"],
+            "https://developer.mozilla.org/en-US/docs/Web/API/NetworkInformation");
+      </script>
+
+      <div id="battery-details"></div>
+      <script>
+        if (navigator.getBattery)
+          navigator.getBattery().then(
+            battery => dump("#battery-details", "navigator.getBattery()", battery, ["charging", "level"],
+              "https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getBattery"));
+      </script>
+    </div>
+
   </article>
   <footer>
     code on <a href="https://github.com/dgl/ip.d.cx">github</a>
