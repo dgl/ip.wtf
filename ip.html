@@ -56,12 +56,22 @@
     font-size: 90%;
   }
 
-  pre.request {
+  pre#http-request {
     width: 100%;
     overflow-y: scroll;
-    padding: 4px;
+    padding: 5px;
     border: 1px solid #ccc;
+    border-radius: 2px;
     background: #f0f0f0;
+  }
+
+  pre#http-request a {
+    color: black;
+    text-decoration: none;
+  }
+
+  pre#http-request a:hover {
+    text-decoration: underline;
   }
 
   details {
@@ -216,6 +226,38 @@
     });
     document.querySelector(selector).appendChild(details);
   }
+
+  function linkifyHTTP(el) {
+    let req = el.textContent;
+    let i = 0;
+    el.textContent = "";
+    for (let line of req.split('\n')) {
+      if (i == 0) {
+        if (line.match(/(\w+)/)) {
+          let verb = RegExp.$1;
+          let a = document.createElement("a");
+          a.href = "https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET";
+          a.textContent = verb;
+          el.appendChild(a);
+          el.appendChild(document.createTextNode(line.substr(verb.length) + "\n"));
+        } else {
+          el.appendChild(document.createTextNode(line + "\n"));
+        }
+      } else {
+        if (line.match(/^([-a-zA-Z0-9_]+):/)) {
+          let header = RegExp.$1;
+          let a = document.createElement("a");
+          a.href = "https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/" + header;
+          a.textContent = header;
+          el.appendChild(a);
+          el.appendChild(document.createTextNode(line.substr(header.length) + "\n"));
+        } else {
+          el.appendChild(document.createTextNode(line + "\n"));
+        }
+      }
+      i++;
+    }
+  }
 </script>
 <script>
   {{ if .IPv4 }}
@@ -267,7 +309,10 @@
 
       <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">
         HTTP request</abbr>:
-      <pre class="request">{{ .Request }}</pre>
+      <pre id="http-request">{{ .Request }}</pre>
+      <script>
+        linkifyHTTP(document.querySelector("#http-request"));
+      </script>
 
       Number of <abbr title="HTTP requests over the same TCP connection due to keep-alive, reload quickly and see this increase, maybe!">
         requests</abbr> over this connection: <b>{{ .RequestCount }}</b>
