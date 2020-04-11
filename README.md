@@ -13,16 +13,23 @@ IPV6=$(curl -s v6.ip.d.cx)
 echo "Public IPv4: $IPV4, Public IPv6: $IPV6"
 ```
 
+## Why?
+
+Because I can.
+
+Sites like this give you details like the headers their reverse proxy server
+injects so the results aren't very trustworthy, the "Raw HTTP request" is really
+the bytes your browser (or a proxy on your side of the connection) sent.
+
 ## Building and running
 
 ### Testing
 
 ```sh
-go build .
-./ipdcx
+go run .
 ```
 
-Use http://localhost:8080/
+Use http://localhost:8080
 
 ### Production
 

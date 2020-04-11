@@ -52,6 +52,10 @@
     display: none;
   }
 
+  .details a[href^="https://bgp.he.net"] {
+    font-size: 90%;
+  }
+
   pre.request {
     width: 100%;
     overflow-y: scroll;
@@ -80,6 +84,11 @@
       ip.textContent = data;
       other.appendChild(ip)
       document.querySelector('#extra-ip').style.display = 'block';
+      if (/:/.test(data)) {
+        ipv6details(data);
+      } else {
+        ipv4details(data);
+      }
     })
     .catch(error => {
       // error => Don't have other protocol.
@@ -99,6 +108,8 @@
     let name = parts.reverse().join('.') + ".in-addr.arpa";
     let result = await resolve(name);
     let details = document.querySelector("#ipv4-details");
+    details.style.display = 'block';
+    details.querySelector("a").href = "https://bgp.he.net/ip/" + ip;
     if (result.Status != 0) { // !OK
       details.querySelector(".host").textContent = "none, got " + dnsErrors[result.Status];
       return;
@@ -109,6 +120,8 @@
   async function ipv6details(ip) {
     let result = await resolve(ipv6reverse(ip));
     let details = document.querySelector("#ipv6-details");
+    details.style.display = 'block';
+    details.querySelector("a").href = "https://bgp.he.net/ip/" + ip;
     if (result.Status != 0) { // !OK
       details.querySelector(".host").textContent = "none, got " + dnsErrors[result.Status];
       return;
@@ -166,14 +179,14 @@
       <h3>IPv4 details</h3>
       Reverse DNS: <span class="host"></span>
       <br>
-      > <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
+      ↝ <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
     </div>
 
     <div id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
       <h3>IPv6 details</h3>
       Reverse DNS: <span class="host"></span>
       <br>
-      > <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
+      ↝ <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
     </div>
 
     <div class="details">
