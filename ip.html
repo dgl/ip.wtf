@@ -95,10 +95,14 @@
     text-indent: -1em;
   }
 
-  footer, footer a {
-    color: #ccc;
+  footer {
+    margin-top: 1.5em;
     text-align: center;
     font-size: 90%;
+  }
+
+  footer, footer a {
+    color: #ccc;
   }
 </style>
 <script>
@@ -272,16 +276,27 @@
         // Most browsers seem to just send 127.0.0.1 to avoid local leakage now
         let protocol = RegExp.$1;
         let ip = RegExp.$2;
-        if (ip != "127.0.0.1" && ip != "::1") {
+        if (ip != "127.0.0.1" && ip != "::1" && ip != "0.0.0.0") {
           out.appendChild(document.createTextNode("Local (internal) address: " + ip));
           out.appendChild(document.createElement("br"));
         }
       }
-      // Remote
-      if (/a=candidate:\d+ \d+ (\w+) \S+ ((?:\d+\.){3}\d+|[a-f0-9:]+) (\d+)/.test(desc.sdp) || /c=IN IP(\d+) ([^\s]+)/.test(desc.sdp)) {
-        let protocol = RegExp.$1;
-        let ip = RegExp.$2;
-        let port = RegExp.$3;
+      // Candidates
+      let re = /a=candidate:\d+ \d+ (\w+) \S+ ((?:\d+\.){3}\d+|[a-f0-9:]+) (\d+)/g;
+      let match;
+      let local = false;
+      while ((match = re.exec(desc.sdp)) !== null) {
+        let protocol = match[1];
+        let ip = match[2];
+        let port = match[3];
+        if (ip.match(/^(10\.|192\.168\.|172.(1[6789]|2\d|3[01])\.)/)) {
+          if (!local) {
+            out.appendChild(document.createTextNode("Local (internal) address: " + ip));
+            out.appendChild(document.createElement("br"));
+            local = true;
+          }
+          continue;
+        }
         out.appendChild(document.createTextNode("Source IP address: "));
         let b = document.createElement("b");
         b.textContent = ip;
