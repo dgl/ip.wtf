@@ -56,6 +56,10 @@
     font-size: 90%;
   }
 
+  .details .country {
+    font-size: 145%;
+  }
+
   pre#http-request {
     width: 100%;
     overflow-y: scroll;
@@ -136,16 +140,57 @@
       .then(r => r.json());
   }
 
+  async function fetchGeoIP(ip) {
+    return fetch("/_geoip/" + encodeURIComponent(ip))
+      .then(r => r.json());
+  }
+
+
   async function ipv4details(ip) {
+    const sel = '#ipv4-details';
+    countryDetails(sel, 'IPv4', geoip);
     let parts = ip.split('.');
     let name = parts.reverse().join('.') + ".in-addr.arpa";
     let result = await resolve(name);
-    displayIPDetails('#ipv4-details', ip, result);
+    displayIPDetails(sel, ip, result);
+    if (!geoip['IPv4']) {
+      geoip['IPv4'] = await fetchGeoIP(ip);
+      countryDetails(sel, 'IPv4', geoip);
+    }
   }
 
   async function ipv6details(ip) {
+    const sel = '#ipv6-details';
+    countryDetails(sel, 'IPv6', geoip);
     let result = await resolve(ipv6reverse(ip));
-    displayIPDetails('#ipv6-details', ip, result);
+    displayIPDetails(sel, ip, result);
+    if (!geoip['IPv6']) {
+      geoip['IPv6'] = await fetchGeoIP(ip);
+      countryDetails(sel, 'IPv6', geoip);
+    }
+  }
+
+  function makeFlag(isoCode) {
+    const emojiBase = 0x1F1E6; // Regional Indicator Symbol Letter A
+    const base = 0x41; // "A"
+    let res = "";
+    for (let i = 0; i < isoCode.length; i++) {
+      res += String.fromCodePoint(emojiBase + isoCode.charCodeAt(i) - base);
+    }
+    return res;
+  }
+
+  function countryDetails(selector, cls, geoip) {
+    let details = document.querySelector(selector);
+    let flag = details.querySelector(".country");
+    if (geoip[cls] && geoip[cls].Country) {
+      let country = geoip[cls].Country;
+      flag.textContent = makeFlag(country);
+      flag.title = country;
+    } else if (geoip[cls]) {
+      flag.textContent = "🛸";
+      flag.title = "Unknown country!";
+    } // otherwise waiting for the result
   }
 
   function displayIPDetails(selector, ip, result) {
@@ -287,6 +332,13 @@
         b.textContent = ip;
         b.title = desc.sdp;
         out.appendChild(b);
+        let flag = document.createElement("span");
+        flag.className = "country";
+        out.appendChild(flag);
+        fetchGeoIP(ip).then(geo => {
+            geoip["WebRTC"] = geo;
+            countryDetails(selector, "WebRTC", geoip);
+        });
         out.appendChild(document.createElement("br"));
         if (port) {
           out.appendChild(document.createTextNode("Source port: "));
@@ -330,14 +382,13 @@
 <script>
   var ipv4 = "", ipv6 = "";
   {{ if .IPv4 }}
-    ipv4details("{{.IPv4}}");
     ipv4 = "{{ .IPv4 }}";
     document.title = "{{ .Host }}: {{ .IPv4 }}";
   {{ else }}
-    ipv6details("{{.IPv6}}");
     ipv6 = "{{ .IPv6 }}";
     document.title = "{{ .Host }}: {{ .IPv6 }}";
   {{ end }}
+  var geoip = {{ .GeoIP }};
 </script>
 
 <body>
@@ -346,7 +397,9 @@
   </header>
   <article>
     <div class="ip">
-      {{ if .IPv4 }}You're using <a href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>: <div class="ipv4">{{ .IPv4 }}</div>
+      {{ if .IPv4 }}You're using <a
+        href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>: <div
+        class="ipv4">{{ .IPv4 }}</div>
       {{ else if .IPv6 }}You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>: <div class="ipv6">{{ .IPv6 }}</div>
       {{ end }}
     </div>
@@ -361,6 +414,8 @@
 
     <div id="ipv4-details" class="details {{if not .IPv4}}hidden{{end}}">
       <h3>IPv4 details</h3>
+      <span class="country">⏳</span>
+      <br>
       Reverse DNS: <span class="host">⏳</span>
       <br>
       ↝ <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
@@ -368,10 +423,20 @@
 
     <div id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
       <h3>IPv6 details</h3>
+      <span class="country">⏳</span>
+      <br>
       Reverse DNS: <span class="host">⏳</span>
       <br>
       ↝ <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
     </div>
+
+    <script>
+      {{ if .IPv4 }}
+        ipv4details("{{.IPv4}}");
+      {{ else }}
+        ipv6details("{{.IPv6}}");
+      {{ end }}
+    </script>
 
     <div class="details">
       <h3>HTTP connection details</h3>
