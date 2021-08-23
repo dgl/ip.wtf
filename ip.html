@@ -145,7 +145,7 @@
   }
 
   async function fetchGeoIP(ip) {
-    return fetch("/_geoip/" + encodeURIComponent(ip))
+    return fetch("/.geoip/" + encodeURIComponent(ip))
       .then(r => r.json());
   }
 
@@ -228,14 +228,16 @@
       + ".ip6.arpa";
   }
 
-  function dump(selector, name, ref, interesting, docs) {
+  function dump(selector, name, ref, interesting, docs, extra) {
     let details = document.createElement("details");
     let summary = document.createElement("summary");
     details.appendChild(summary);
     summary.textContent = name + ": ";
     let items = document.createElement("b");
     items.textContent = interesting.filter(item => ref[item])
-      .map(item => item + ": " + ref[item]).join(", ");
+      .map(item => item + ": " +
+        (typeof ref[item] == "function" ? ref[item]() : ref[item]))
+      .join(", ");
     summary.appendChild(items);
     let docsEl = document.createElement("a");
     docsEl.textContent = "Documention for " + name + " on MDN";
@@ -251,11 +253,12 @@
             items.push(item);
           }
           for (const item of items.sort()) {
-            if (typeof(ref[item]) == "function") {
+            if (typeof(ref[item]) == "function" && (!extra || !extra.includes(item))) {
               continue;
             }
             let el = document.createElement("li");
-            el.textContent = item + ": " + ref[item];
+            el.textContent = item + ": " +
+                typeof(ref[item] == "function" ? ref[item]() : ref[item]);
             if (ref[item] && !output) {
               output = true;
             }
@@ -344,7 +347,7 @@
         }
         out.appendChild(document.createTextNode("Source IP address: "));
         let b = document.createElement("b");
-        b.textContent = ip;
+        b.textContent = ip + " ";
         b.title = desc.sdp;
         out.appendChild(b);
         let flag = document.createElement("span");
@@ -473,11 +476,17 @@
 
     <div class="details">
       <h3>Browser details</h3>
-
       <div id="navigator-basic-details"></div>
       <script>
         dump("#navigator-basic-details", "navigator", window.navigator, ["vendor", "platform", "hardwareConcurrency", "deviceMemory"],
           "https://developer.mozilla.org/en-US/docs/Web/API/Navigator");
+      </script>
+
+      <div id="time-details"></div>
+      <script>
+        dump('#time-details', 'Date', new Date(), ["toTimeString"],
+            "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date",
+                ["toString", "toLocaleString", "toTimeString", "toLocaleTimeString"]);
       </script>
 
       <div id="screen-details"></div>

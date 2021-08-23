@@ -88,7 +88,6 @@ func dnsServe() {
 			rr := MustNewRR(name + CNAME)
 			m.Answer = []dns.RR{rr}
 		}
-		//fmt.Println(m)
 		w.WriteMsg(m)
 	})
 

@@ -96,20 +96,27 @@ ACCEPT:
 	return Html
 }
 
-func hostRouter(w http.ResponseWriter, req *http.Request) {
+func hostRouter(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
 	if strings.Contains(req.Host, ".dns."+*flagHost) {
 		dnsHandler(w, req)
 	} else {
-		ip(w, req)
+		ip(w, req, conn)
+	}
+}
+
+func connWrap(handler func(w http.ResponseWriter, req *http.Request, conn *RecordingConn)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
+		v := req.Context().Value(ConnContextKey)
+		rConn := v.(RecordingConn)
+		rConn.read.count += 1
+		handler(w, req, &rConn)
+		rConn.read.read = nil
 	}
 }
 
 type GeoIPInfo struct{ Country string }
 
-func ip(w http.ResponseWriter, req *http.Request) {
-	v := req.Context().Value(ConnContextKey)
-	rConn := v.(RecordingConn)
-
+func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	t := resolveAccept(req)
 	if t == Plain {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
@@ -117,8 +124,6 @@ func ip(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(rConn.RemoteAddr().(*net.TCPAddr).IP.String()))
 		return
 	}
-
-	rConn.read.count += 1
 
 	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 
@@ -157,17 +162,18 @@ func ip(w http.ResponseWriter, req *http.Request) {
 		log.Printf("templating failed: %v", err)
 		http.Error(w, "Failed rendering template", http.StatusInternalServerError)
 	}
-	rConn.read.read = nil
 }
 
-func geoIP(w http.ResponseWriter, req *http.Request) {
+func geoIP(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	p := strings.SplitN(req.URL.Path, "/", 3)
 	if len(p) != 3 {
 		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
 	}
 	ip := net.ParseIP(p[2])
 	if ip == nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
 	}
 	record, err := mmDB.Country(ip)
 	if err != nil {
@@ -196,8 +202,8 @@ func main() {
 	server := &http.Server{
 		ConnContext: ConnContext,
 	}
-	http.HandleFunc("/", hostRouter)
-	http.HandleFunc("/_geoip/", geoIP)
+	http.HandleFunc("/", connWrap(hostRouter))
+	http.HandleFunc("/.geoip/", connWrap(geoIP))
 	l, err := net.Listen("tcp", *flagListen)
 	if err != nil {
 		log.Fatal(err)
