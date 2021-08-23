@@ -129,7 +129,6 @@ func ip(w http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				log.Printf("MaxMind lookup for %v: %v", v4, err)
 			} else {
-				log.Print(record)
 				geoIP["IPv4"] = GeoIPInfo{record.Country.IsoCode}
 			}
 		} else {
@@ -137,7 +136,6 @@ func ip(w http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				log.Printf("MaxMind lookup for %v: %v", remoteAddr.IP, err)
 			} else {
-				log.Print(record)
 				geoIP["IPv6"] = GeoIPInfo{record.Country.IsoCode}
 			}
 		}
