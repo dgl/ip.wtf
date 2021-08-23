@@ -2,20 +2,26 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"html/template"
 	"log"
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/oschwald/geoip2-golang"
 )
 
 var (
-	flagListen = flag.String("listen", ":8080", "[ip]:port to listen for HTTP connections on")
-	flagHost = flag.String("host", "ip.d.cx", "Hostname for the overall application")
-	flagV4Host = flag.String("v4-host", "127.0.0.1:8080", "Host for IPv4 access")
-	flagV6Host = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
+	flagListen    = flag.String("listen", ":8080", "[ip]:port to listen for HTTP connections on")
+	flagHost      = flag.String("host", "ip.d.cx", "Hostname for the overall application")
+	flagV4Host    = flag.String("v4-host", "127.0.0.1:8080", "Host for IPv4 access")
+	flagV6Host    = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
+	flagMaxMindDB = flag.String("maxmind-db", "GeoLite2-Country.mmdb", "MaxMind IP database")
 )
+
+var mmDB *geoip2.Reader
 
 var ipTmpl = template.Must(template.ParseFiles("ip.html"))
 
@@ -34,7 +40,7 @@ type RecordingConn struct {
 }
 
 type readInfo struct {
-	read []byte
+	read  []byte
 	count int
 }
 
@@ -58,6 +64,7 @@ func ConnContext(ctx context.Context, c net.Conn) context.Context {
 }
 
 type Type int
+
 const (
 	Html = iota
 	Plain
@@ -66,7 +73,8 @@ const (
 
 func resolveAccept(req *http.Request) Type {
 	accepts := strings.Split(req.Header.Get("Accept"), ",")
-	ACCEPT: for _, accept := range accepts {
+ACCEPT:
+	for _, accept := range accepts {
 		switch i := strings.Split(accept, ";"); i[0] {
 		case "text/html":
 			return Html
@@ -88,6 +96,16 @@ func resolveAccept(req *http.Request) Type {
 	return Html
 }
 
+func hostRouter(w http.ResponseWriter, req *http.Request) {
+	if strings.Contains(req.Host, ".dns."+*flagHost) {
+		dnsHandler(w, req)
+	} else {
+		ip(w, req)
+	}
+}
+
+type GeoIPInfo struct{ Country string }
+
 func ip(w http.ResponseWriter, req *http.Request) {
 	v := req.Context().Value(ConnContextKey)
 	rConn := v.(RecordingConn)
@@ -104,15 +122,37 @@ func ip(w http.ResponseWriter, req *http.Request) {
 
 	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 
+	geoIP := map[string]GeoIPInfo{}
+	if mmDB != nil {
+		if v4 := remoteAddr.IP.To4(); v4 != nil {
+			record, err := mmDB.Country(v4)
+			if err != nil {
+				log.Printf("MaxMind lookup for %v: %v", v4, err)
+			} else {
+				log.Print(record)
+				geoIP["IPv4"] = GeoIPInfo{record.Country.IsoCode}
+			}
+		} else {
+			record, err := mmDB.Country(remoteAddr.IP)
+			if err != nil {
+				log.Printf("MaxMind lookup for %v: %v", remoteAddr.IP, err)
+			} else {
+				log.Print(record)
+				geoIP["IPv6"] = GeoIPInfo{record.Country.IsoCode}
+			}
+		}
+	}
+
 	err := ipTmpl.Execute(w, map[string]interface{}{
-		"IPv4": remoteAddr.IP.To4(),
-		"IPv6": remoteAddr.IP,
-		"RemoteAddr": remoteAddr,
+		"IPv4":         remoteAddr.IP.To4(),
+		"IPv6":         remoteAddr.IP,
+		"GeoIP":        geoIP,
+		"RemoteAddr":   remoteAddr,
 		"RequestCount": rConn.read.count,
-		"Request": string(rConn.read.read),
-		"Host": *flagHost,
-		"V4Host": *flagV4Host,
-		"V6Host": *flagV6Host,
+		"Request":      string(rConn.read.read),
+		"Host":         *flagHost,
+		"V4Host":       *flagV4Host,
+		"V6Host":       *flagV6Host,
 	})
 
 	if err != nil {
@@ -122,16 +162,48 @@ func ip(w http.ResponseWriter, req *http.Request) {
 	rConn.read.read = nil
 }
 
+func geoIP(w http.ResponseWriter, req *http.Request) {
+	p := strings.SplitN(req.URL.Path, "/", 3)
+	if len(p) != 3 {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+	}
+	ip := net.ParseIP(p[2])
+	if ip == nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+	}
+	record, err := mmDB.Country(ip)
+	if err != nil {
+		log.Printf("MaxMind lookup for %v: %v", ip, err)
+	} else {
+		err := json.NewEncoder(w).Encode(
+			GeoIPInfo{record.Country.IsoCode})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
 func main() {
 	flag.Parse()
+
+	var err error
+	mmDB, err = geoip2.Open(*flagMaxMindDB)
+	if err != nil {
+		if *flagMaxMindDB != "" {
+			log.Printf("MaxMind DB error: %v", err)
+		}
+		mmDB = nil
+	}
 
 	server := &http.Server{
 		ConnContext: ConnContext,
 	}
-	http.HandleFunc("/", ip)
+	http.HandleFunc("/", hostRouter)
+	http.HandleFunc("/_geoip/", geoIP)
 	l, err := net.Listen("tcp", *flagListen)
 	if err != nil {
 		log.Fatal(err)
 	}
+	go dnsServe()
 	log.Fatal(server.Serve(RecordingListener{l}))
 }
