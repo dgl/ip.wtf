@@ -78,6 +78,15 @@
     text-decoration: underline;
   }
 
+  table.details-table {
+    border: 0;
+    width: 100%;
+  }
+
+  .details-table td {
+    width: 50%;
+  }
+
   details {
     margin-bottom: .5em;
   }
@@ -149,6 +158,10 @@
       .then(r => r.json());
   }
 
+  async function fetchDNS(name) {
+      return fetch("http://" + name + ".{{ .DNSID }}{{ .DNSHost }}")
+      .then(r => r.json());
+  }
 
   async function ipv4details(ip) {
     const sel = '#ipv4-details';
@@ -192,14 +205,15 @@
       flag.textContent = makeFlag(country);
       flag.title = country;
     } else if (geoip[cls]) {
-      flag.textContent = "🛸";
+      const unknown = ["🛸", "👽"];
+      flag.textContent = unknown[Math.floor(unknown.length*Math.random())];
       flag.title = "Unknown country!";
     } // otherwise waiting for the result
   }
 
   function displayIPDetails(selector, ip, result) {
     let details = document.querySelector(selector);
-    details.style.display = 'block';
+    details.classList.remove('hidden');
     details.querySelector("a").href = "https://bgp.he.net/ip/" + ip;
     let host = details.querySelector(".host");
     if (result.Status != 0) { // !OK
@@ -310,6 +324,16 @@
         }
       }
       i++;
+    }
+  }
+
+  async function dns(selector) {
+    let details = document.querySelector(selector);
+    try {
+      let result = await fetchDNS("0");
+      details.textContent = result;
+    } catch (e) {
+      details.textContent = e;
     }
   }
 
@@ -430,23 +454,27 @@
       You do not appear to have any {{ if .IPv4 }}IPv6{{else}}IPv4{{end}} connectivity.
     </div>
 
-    <div id="ipv4-details" class="details {{if not .IPv4}}hidden{{end}}">
-      <h3>IPv4 details</h3>
-      <span class="country">⏳</span>
-      <br>
-      Reverse DNS: <span class="host">⏳</span>
-      <br>
-      ↝ <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
-    </div>
+    <table class="details-table">
+      <tr>
+        <td id="ipv4-details" class="details {{if not .IPv4}}hidden{{end}}">
+          <h3>IPv4 details</h3>
+          <span class="country">⏳</span>
+          <br>
+          Reverse DNS: <span class="host">⏳</span>
+          <br>
+          ↝ <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
+        </td>
 
-    <div id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
-      <h3>IPv6 details</h3>
-      <span class="country">⏳</span>
-      <br>
-      Reverse DNS: <span class="host">⏳</span>
-      <br>
-      ↝ <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
-    </div>
+        <td id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
+          <h3>IPv6 details</h3>
+          <span class="country">⏳</span>
+          <br>
+          Reverse DNS: <span class="host">⏳</span>
+          <br>
+          ↝ <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
+        </td>
+      </tr>
+    </table>
 
     <script>
       {{ if .IPv4 }}
@@ -508,6 +536,16 @@
           navigator.getBattery().then(
             battery => dump("#battery-details", "navigator.getBattery()", battery, ["charging", "level"],
               "https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getBattery"));
+      </script>
+    </div>
+
+    <div class="details hidden">
+      <h3>DNS details</h3>
+      <div id="dns-details">
+        <small id="dns-loading">Querying your DNS servers...</small>
+      </div>
+      <script>
+        dns("#dns-details");
       </script>
     </div>
 

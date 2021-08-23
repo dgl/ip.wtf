@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base32"
 	"encoding/json"
 	"flag"
 	"html/template"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -146,7 +149,16 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		}
 	}
 
-	err := ipTmpl.Execute(w, map[string]interface{}{
+	var dnsID strings.Builder
+	b32 := base32.NewEncoder(base32.HexEncoding.WithPadding(base32.NoPadding), &dnsID)
+	_, err := io.CopyN(b32, rand.Reader, 12)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	b32.Close()
+
+	err = ipTmpl.Execute(w, map[string]interface{}{
 		"IPv4":         remoteAddr.IP.To4(),
 		"IPv6":         remoteAddr.IP,
 		"GeoIP":        geoIP,
@@ -156,6 +168,8 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		"Host":         *flagHost,
 		"V4Host":       *flagV4Host,
 		"V6Host":       *flagV6Host,
+		"DNSHost":      ".dns." + *flagHost,
+		"DNSID":        dnsID.String(),
 	})
 
 	if err != nil {
