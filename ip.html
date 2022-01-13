@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ .Host }}: What's my IP address?</title>
+<title>WTF is my IP?</title>
 <style>
   h1 {
     text-align: center;
@@ -116,6 +116,15 @@
 
   footer, footer a {
     color: #ccc;
+  }
+
+  footer ul li {
+    display: inline;
+    list-style-type: none;
+  }
+
+  footer li:not(:first-child)::before {
+    content: " • ";
   }
 </style>
 <script>
@@ -562,6 +571,10 @@
 
   </article>
   <footer>
-    code on <a href="https://github.com/dgl/ip.d.cx">github</a>
+    <ul>
+      <!--<li><a href="/about">about</a>-->
+      <li><a href="https://github.com/dgl/ip.wtf">github</a>
+      <li><a href="https://twitter.com/ip_wtf">twitter</a>
+    </ul>
   </footer>
 </body>

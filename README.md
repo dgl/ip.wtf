@@ -1,6 +1,6 @@
-# ip.d.cx
+# ip.wtf
 
-The code behind http://ip.d.cx/
+The code behind http://ip.wtf
 
 ## Using
 
@@ -8,8 +8,8 @@ Just visit it.
 
 What's my IP in a script?
 ```sh
-IPV4=$(curl -s v4.ip.d.cx)
-IPV6=$(curl -s v6.ip.d.cx)
+IPV4=$(curl -s v4.ip.wtf)
+IPV6=$(curl -s v6.ip.wtf)
 echo "Public IPv4: $IPV4, Public IPv6: $IPV6"
 ```
 
@@ -20,6 +20,9 @@ Because I can.
 Sites like this give you details like the headers their reverse proxy server
 injects so the results aren't very trustworthy, the "Raw HTTP request" is really
 the bytes your browser (or a proxy on your side of the connection) sent.
+
+In general this aims to be as privacy preserving as possible, while revealing
+details about your browser and connection, that might be sensitive.
 
 ## Building and running
 

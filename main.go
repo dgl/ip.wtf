@@ -18,7 +18,7 @@ import (
 
 var (
 	flagListen    = flag.String("listen", ":8080", "[ip]:port to listen for HTTP connections on")
-	flagHost      = flag.String("host", "ip.d.cx", "Hostname for the overall application")
+	flagHost      = flag.String("host", "ip.wtf", "Hostname for the overall application")
 	flagV4Host    = flag.String("v4-host", "127.0.0.1:8080", "Host for IPv4 access")
 	flagV6Host    = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
 	flagMaxMindDB = flag.String("maxmind-db", "GeoLite2-Country.mmdb", "MaxMind IP database")
@@ -217,6 +217,7 @@ func main() {
 		ConnContext: ConnContext,
 	}
 	http.HandleFunc("/", connWrap(hostRouter))
+	http.HandleFunc("/cowsay", connWrap(cowsay))
 	http.HandleFunc("/.geoip/", connWrap(geoIP))
 	l, err := net.Listen("tcp", *flagListen)
 	if err != nil {
