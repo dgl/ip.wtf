@@ -16,6 +16,16 @@ const (
                 ||----w |
                 ||     ||
 `
+	basicTux = `   o
+    o
+        .--.
+       |o_o |
+       |:_/ |
+      //   \ \
+     (|     | )
+    /'\_   _/` + "`" + `\
+    \___)=(___/
+`
 	ipCow = `        \   ^__^
          \  (oo)\_______            ip.wtf
             (__)\       )\/\
@@ -36,7 +46,11 @@ func cowsay(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	} else {
 		remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 		w.Write([]byte("\x1bc"))
-		w.Write([]byte(cowsayText(0, "What the fuck is my IP address?", basicCow, "")))
+		basicTmpl := basicCow
+		if rand.Intn(9) <= 1 {
+			basicTmpl = basicTux
+		}
+		w.Write([]byte(cowsayText(0, "What the fuck is my IP address?", basicTmpl, "")))
 		if w, ok := w.(http.Flusher); ok {
 			w.Flush()
 		}
@@ -66,7 +80,7 @@ func cowsayText(align int, text, template, proto string) string {
 	// VTE / iTerm2 URL escape.
 	template = strings.Replace(template, "ip.wtf", "\x1b]8;;http://ip.wtf\aip.wtf\x1b]8;;\a", 1)
 	template = strings.Replace(template, "xx", proto, 1)
-	n := align-4-len(text)
+	n := align - 4 - len(text)
 	if n > 0 {
 		for i := 0; i < n; i++ {
 			o.WriteRune(' ')

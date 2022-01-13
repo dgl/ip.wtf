@@ -78,7 +78,7 @@ func resolveAccept(req *http.Request) Type {
 	accepts := strings.Split(req.Header.Get("Accept"), ",")
 ACCEPT:
 	for _, accept := range accepts {
-		switch i := strings.Split(accept, ";"); i[0] {
+		switch i := strings.Split(strings.TrimSpace(accept), ";"); i[0] {
 		case "text/html":
 			return Html
 		case "text/plain":
@@ -122,15 +122,28 @@ func connWrap(handler func(w http.ResponseWriter, req *http.Request, conn *Recor
 type GeoIPInfo struct{ Country string }
 
 func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
+	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
+
+	w.Header().Add("X-Super-Cow-Powers", "curl "+*flagHost+"/moo")
+
 	t := resolveAccept(req)
 	if t == Plain {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
-		w.Write([]byte(rConn.RemoteAddr().(*net.TCPAddr).IP.String()))
+		w.Write([]byte(remoteAddr.IP.String() + "\n"))
 		return
 	}
 
-	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
+	if req.Host == "ip.d.cx" {
+		http.Redirect(w, req, "http://"+*flagHost, http.StatusMovedPermanently)
+		return
+	} else if req.Host == "v4.ip.d.cx" {
+		http.Redirect(w, req, "http://v4."+*flagHost, http.StatusMovedPermanently)
+		return
+	} else if req.Host == "v6.ip.d.cx" {
+		http.Redirect(w, req, "http://v6."+*flagHost, http.StatusMovedPermanently)
+		return
+	}
 
 	geoIP := map[string]GeoIPInfo{}
 	if mmDB != nil {
