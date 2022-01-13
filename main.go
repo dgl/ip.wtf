@@ -102,8 +102,10 @@ ACCEPT:
 func hostRouter(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
 	if strings.Contains(req.Host, ".dns."+*flagHost) {
 		dnsHandler(w, req)
-	} else {
+	} else if req.URL.Path == "/" {
 		ip(w, req, conn)
+	} else {
+		http.Error(w, "Not found", http.StatusNotFound)
 	}
 }
 
