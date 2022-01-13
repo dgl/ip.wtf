@@ -220,6 +220,7 @@ func main() {
 	}
 	http.HandleFunc("/", connWrap(hostRouter))
 	http.HandleFunc("/cowsay", connWrap(cowsay))
+	http.HandleFunc("/moo", connWrap(cowsay))
 	http.HandleFunc("/.geoip/", connWrap(geoIP))
 	l, err := net.Listen("tcp", *flagListen)
 	if err != nil {

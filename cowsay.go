@@ -32,7 +32,7 @@ ip.wtf        _______/(oo)  /
 
 func cowsay(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	if !strings.Contains(req.Header.Get("User-Agent"), "curl/") {
-		w.Write([]byte("<b><a href=/>ip.wtf!</a></b><br><br>To see the cowsay version, please run: <code>curl ip.wtf/cowsay</code>"))
+		w.Write([]byte("<b><a href=/>ip.wtf!</a></b><br><br>To see the super cow powers, please run: <code>curl ip.wtf/moo</code>"))
 	} else {
 		remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 		w.Write([]byte("\x1bc"))
