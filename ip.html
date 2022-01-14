@@ -52,7 +52,7 @@
     display: none;
   }
 
-  .details a[href^="https://bgp.he.net"] {
+  .details a[href^="https://bgp.tools"] {
     font-size: 90%;
   }
 
@@ -134,6 +134,7 @@
     }
   }).then(r => r.text())
     .then(data => {
+      data = data.trim();
       // Have other protocol IP address
       let other = document.querySelector('#other-ip');
       other.textContent = "{{ if .IPv4 }}IPv6{{ else }}IPv4{{ end }} address: "
@@ -223,7 +224,7 @@
   function displayIPDetails(selector, ip, result) {
     let details = document.querySelector(selector);
     details.classList.remove('hidden');
-    details.querySelector("a").href = "https://bgp.he.net/ip/" + ip;
+    details.querySelector("a").href = "https://bgp.tools/search?q=" + ip;
     let host = details.querySelector(".host");
     if (result.Status != 0) { // !OK
       host.textContent = "none, got " + dnsErrors[result.Status];
@@ -471,7 +472,7 @@
           <br>
           Reverse DNS: <span class="host">⏳</span>
           <br>
-          ↝ <a href="https://bgp.he.net/ip/{{.IPv4}}">More details on bgp.he.net</a>
+          ↝ <a href="https://bgp.tools/search?q={{.IPv4}}">More details on bgp.tools</a>
         </td>
 
         <td id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
@@ -480,7 +481,7 @@
           <br>
           Reverse DNS: <span class="host">⏳</span>
           <br>
-          ↝ <a href="https://bgp.he.net/ip/{{.IPv6}}">More details on bgp.he.net</a>
+          ↝ <a href="https://bgp.tools/search?q={{.IPv6}}">More details on bgp.tools</a>
         </td>
       </tr>
     </table>
