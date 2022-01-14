@@ -14,15 +14,34 @@ import (
 	"strings"
 
 	"github.com/oschwald/geoip2-golang"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
-	flagListen    = flag.String("listen", ":8080", "[ip]:port to listen for HTTP connections on")
-	flagHost      = flag.String("host", "ip.wtf", "Hostname for the overall application")
-	flagV4Host    = flag.String("v4-host", "127.0.0.1:8080", "Host for IPv4 access")
-	flagV6Host    = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
-	flagMaxMindDB = flag.String("maxmind-db", "GeoLite2-Country.mmdb", "MaxMind IP database")
+	flagListen         = flag.String("listen", ":8080", "[ip]:port to listen for HTTP connections on")
+	flagHost           = flag.String("host", "ip.wtf", "Hostname for the overall application")
+	flagV4Host         = flag.String("v4-host", "127.0.0.1:8080", "Host for IPv4 access")
+	flagV6Host         = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
+	flagMaxMindDB      = flag.String("maxmind-db", "GeoLite2-Country.mmdb", "MaxMind IP database")
+	flagAllowedMetrics = flag.String("allowed-metrics", "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,::1/128", "IPs allowed to fetch metrics")
 )
+
+var allowedMetrics []net.IPNet
+var promhttpHandler = promhttp.Handler()
+
+var (
+	httpRequests = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "http",
+			Name:      "requests_total",
+		},
+		[]string{"code", "method", "handler"})
+)
+
+func init() {
+	prometheus.MustRegister(httpRequests)
+}
 
 var mmDB *geoip2.Reader
 
@@ -216,6 +235,18 @@ func geoIP(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	}
 }
 
+func handleMetrics(w http.ResponseWriter, r *http.Request, rConn *RecordingConn) {
+	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
+	for _, cidr := range allowedMetrics {
+		if cidr.Contains(remoteAddr.IP) {
+			promhttpHandler.ServeHTTP(w, r)
+			return
+		}
+	}
+
+	hostRouter(w, r, rConn)
+}
+
 func main() {
 	flag.Parse()
 
@@ -228,13 +259,34 @@ func main() {
 		mmDB = nil
 	}
 
+	for _, cidr := range strings.Split(*flagAllowedMetrics, ",") {
+		if len(cidr) == 0 {
+			continue
+		}
+		_, n, err := net.ParseCIDR(cidr)
+		if err != nil {
+			log.Printf("ParseCIDR: %q %v", cidr, err)
+			continue
+		}
+		allowedMetrics = append(allowedMetrics, *n)
+	}
+
 	server := &http.Server{
 		ConnContext: ConnContext,
 	}
-	http.HandleFunc("/", connWrap(hostRouter))
-	http.HandleFunc("/cowsay", connWrap(cowsay))
-	http.HandleFunc("/moo", connWrap(cowsay))
-	http.HandleFunc("/.geoip/", connWrap(geoIP))
+
+	handler := func(path string, f http.HandlerFunc) {
+		http.HandleFunc(path, promhttp.InstrumentHandlerCounter(
+			httpRequests.MustCurryWith(prometheus.Labels{"handler": path}), f))
+	}
+
+	handler("/", connWrap(hostRouter))
+	handler("/cowsay", connWrap(cowsay))
+	handler("/moo", connWrap(cowsay))
+	handler("/.geoip/", connWrap(geoIP))
+
+	http.HandleFunc("/metrics", connWrap(handleMetrics))
+
 	l, err := net.Listen("tcp", *flagListen)
 	if err != nil {
 		log.Fatal(err)

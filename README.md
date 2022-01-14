@@ -43,4 +43,7 @@ sudo setcap cap_net_bind_service=+ep ./ipdcx
 
 ## Licence
 
-WTFPLv2, no warranty. https://dgl.cx/licence
+This product includes GeoLite2 data created by MaxMind, available from
+<a href="https://www.maxmind.com">https://www.maxmind.com</a>.
+
+Otherwise; WTFPLv2, no warranty. https://dgl.cx/licence
