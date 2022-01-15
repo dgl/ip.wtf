@@ -282,7 +282,7 @@
             }
             let el = document.createElement("li");
             el.textContent = item + ": " +
-                typeof(ref[item]) == "function" ? ref[item]() : ref[item];
+                (typeof(ref[item]) == "function" ? ref[item]() : ref[item]);
             if (ref[item] && !output) {
               output = true;
             }
