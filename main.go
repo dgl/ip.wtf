@@ -157,6 +157,8 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		w.Write([]byte(remoteAddr.IP.String() + "\n"))
 		return
 	case Json:
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
 		req.URL.Path = "/" + remoteAddr.IP.String()
 		ipDetails(w, req, rConn)
 		return

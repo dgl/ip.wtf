@@ -196,7 +196,7 @@
       if (ipDetails[cls].location.country) {
         let country = ipDetails[cls].location.country;
         flag.textContent = makeFlag(country);
-        flag.title = country;
+        flag.title = ipDetails[cls].location.country_name;
       } else {
         const unknown = ["🛸", "👽"];
         flag.textContent = unknown[Math.floor(unknown.length*Math.random())];
@@ -489,35 +489,44 @@
     <script>
       fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
         headers: {
-          Accept: "text/plain"
+          Accept: "application/json"
         }
-      }).then(r => r.text())
+      }).then(r => r.json())
         .then(data => {
-          data = data.trim();
+          let ip = data.ip;
           // Have other protocol IP address
           let other = document.querySelector('#other-ip');
           other.textContent = "{{ if .IPv4 }}IPv6{{ else }}IPv4{{ end }} address: "
-          let ip = document.createElement("b");
-          ip.textContent = data;
-          other.appendChild(ip)
+          let ipEl = document.createElement("b");
+          ipEl.textContent = ip;
+          other.appendChild(ipEl)
           document.querySelector('#extra-ip').style.display = 'block';
+          ipDetails[ip] = data;
           if (/:/.test(data)) {
-            ipv6details(data);
-            ipv6 = data;
+            ipv6details(ip);
+            ipv6 = ip;
           } else {
-            ipv4details(data);
-            ipv4 = data;
+            ipv4details(ip);
+            ipv4 = ip;
           }
         })
         .catch(error => {
           // error => Don't have other protocol.
           document.querySelector('#only-ip').style.display = 'block';
+          if (!ipv4) {
+            // no IPv4 => IPv6 only, hide pre-emptively shown IPv4 cell.
+            let details = document.querySelector("#ipv4-details");
+            details.classList.add('hidden');
+          }
         });
 
       {{ if .IPv4 }}
         ipv4details("{{.IPv4}}");
       {{ else }}
         ipv6details("{{.IPv6}}");
+        // Most people with IPv6 currently also have IPv4, show loading to avoid reflow.
+        let details = document.querySelector("#ipv4-details");
+        details.classList.remove('hidden');
       {{ end }}
     </script>
 
