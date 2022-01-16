@@ -156,6 +156,7 @@
 
   async function ipv4details(ip) {
     const sel = '#ipv4-details';
+    doIPDetails(sel, ip, ipDetails);
     let parts = ip.split('.');
     let name = parts.reverse().join('.') + ".in-addr.arpa";
     let result = await resolve(name);
@@ -168,6 +169,7 @@
 
   async function ipv6details(ip) {
     const sel = '#ipv6-details';
+    doIPDetails(sel, ip, ipDetails);
     let result = await resolve(ipv6reverse(ip));
     displayIPDetails(sel, ip, result);
     if (!ipDetails[ip]) {
