@@ -44,7 +44,7 @@
     color: green;
   }
 
-  #extra-ip, #only-ip, .details {
+  #extra-ip, #only-ip, #ip-space, .details {
     margin-top: 2em;
   }
 
@@ -89,6 +89,7 @@
   }
 
   .details-table td {
+    vertical-align: top;
     width: 50%;
   }
 
@@ -454,6 +455,10 @@
       {{ end }}
     </div>
 
+    <div id="ip-space">
+      &nbsp;
+    </div>
+
     <div id="extra-ip">
       Your browser preferred using {{ if .IPv4 }}IPv4{{else}}IPv6{{end}} but you also have an <span id="other-ip"></span>
     </div>
@@ -501,6 +506,7 @@
           ipEl.textContent = ip;
           other.appendChild(ipEl)
           document.querySelector('#extra-ip').style.display = 'block';
+          document.querySelector('#ip-space').classList.add('hidden');
           ipDetails[ip] = data;
           if (/:/.test(data)) {
             ipv6details(ip);
@@ -513,6 +519,7 @@
         .catch(error => {
           // error => Don't have other protocol.
           document.querySelector('#only-ip').style.display = 'block';
+          document.querySelector('#ip-space').style.display = 'hidden';
           if (!ipv4) {
             // no IPv4 => IPv6 only, hide pre-emptively shown IPv4 cell.
             let details = document.querySelector("#ipv4-details");
