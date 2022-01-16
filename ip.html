@@ -473,7 +473,8 @@
 
     <table class="details-table">
       <tr>
-        <td id="ipv4-details" class="details {{if not .IPv4}}hidden{{end}}">
+        {{/* Most people with IPv6 currently also have IPv4, show loading to avoid reflow. */}}
+        <td id="ipv4-details" class="details">
           <h3>IPv4 details</h3>
           <span class="country">⏳</span>
           <br>
@@ -495,7 +496,32 @@
       </tr>
     </table>
 
+    <div class="details">
+      <h3>HTTP connection details</h3>
+
+      Source <abbr title="Transmission Control Protocol, the layer below HTTP">
+        TCP</abbr> port: <b>{{ .RemoteAddr.Port }}</b><br>
+
+      <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">
+        HTTP request</abbr>:
+      <pre id="http-request">{{ .Request }}</pre>
+
+      Number of <abbr title="HTTP requests over the same TCP connection due to keep-alive, reload quickly and see this increase, maybe!">
+        requests</abbr> over this connection: <b>{{ .RequestCount }}</b>
+      <br>
+    </div>
+
     <script>
+      setTimeout(() => {
+      {{ if .IPv4 }}
+        ipv4details("{{.IPv4}}");
+      {{ else }}
+        ipv6details("{{.IPv6}}");
+      {{ end }}
+      }, 0);
+
+      linkifyHTTP(document.querySelector("#http-request"));
+
       fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
         headers: {
           Accept: "application/json"
@@ -530,34 +556,7 @@
             details.classList.add('hidden');
           }
         });
-
-      {{ if .IPv4 }}
-        ipv4details("{{.IPv4}}");
-      {{ else }}
-        ipv6details("{{.IPv6}}");
-        // Most people with IPv6 currently also have IPv4, show loading to avoid reflow.
-        let details = document.querySelector("#ipv4-details");
-        details.classList.remove('hidden');
-      {{ end }}
     </script>
-
-    <div class="details">
-      <h3>HTTP connection details</h3>
-
-      Source <abbr title="Transmission Control Protocol, the layer below HTTP">
-        TCP</abbr> port: <b>{{ .RemoteAddr.Port }}</b><br>
-
-      <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">
-        HTTP request</abbr>:
-      <pre id="http-request">{{ .Request }}</pre>
-      <script>
-        linkifyHTTP(document.querySelector("#http-request"));
-      </script>
-
-      Number of <abbr title="HTTP requests over the same TCP connection due to keep-alive, reload quickly and see this increase, maybe!">
-        requests</abbr> over this connection: <b>{{ .RequestCount }}</b>
-      <br>
-    </div>
 
     <div class="details">
       <h3>Browser details</h3>
@@ -616,8 +615,8 @@
         establishWebRTC("#webrtc-details");
       </script>
     </div>
-
   </article>
+
   <footer>
     <ul>
       <!--<li><a href="/about">about</a>-->
