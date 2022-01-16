@@ -508,7 +508,7 @@
           document.querySelector('#extra-ip').style.display = 'block';
           document.querySelector('#ip-space').classList.add('hidden');
           ipDetails[ip] = data;
-          if (/:/.test(data)) {
+          if (/:/.test(ip)) {
             ipv6details(ip);
             ipv6 = ip;
           } else {

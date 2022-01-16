@@ -212,6 +212,7 @@ func ipDetails(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+	w.Header().Add("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(lookupIP(ip))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
