@@ -523,7 +523,7 @@
         .catch(error => {
           // error => Don't have other protocol.
           document.querySelector('#only-ip').style.display = 'block';
-          document.querySelector('#ip-space').style.display = 'hidden';
+          document.querySelector('#ip-space').classList.add('hidden');
           if (!ipv4) {
             // no IPv4 => IPv6 only, hide pre-emptively shown IPv4 cell.
             let details = document.querySelector("#ipv4-details");
