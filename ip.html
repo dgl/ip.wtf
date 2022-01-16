@@ -35,7 +35,7 @@
   }
 
   .ipv4 {
-    font-size: 200%;
+    font-size: 250%;
     color: red;
   }
 
@@ -59,6 +59,11 @@
   .details .country {
     font-size: 145%;
   }
+
+  #ipv4-details .country, #ipv6-details .country {
+    font-size: 200%;
+  }
+
 
   pre#http-request {
     width: 100%;
@@ -128,33 +133,6 @@
   }
 </style>
 <script>
-  fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
-    headers: {
-      Accept: "text/plain"
-    }
-  }).then(r => r.text())
-    .then(data => {
-      data = data.trim();
-      // Have other protocol IP address
-      let other = document.querySelector('#other-ip');
-      other.textContent = "{{ if .IPv4 }}IPv6{{ else }}IPv4{{ end }} address: "
-      let ip = document.createElement("b");
-      ip.textContent = data;
-      other.appendChild(ip)
-      document.querySelector('#extra-ip').style.display = 'block';
-      if (/:/.test(data)) {
-        ipv6details(data);
-        ipv6 = data;
-      } else {
-        ipv4details(data);
-        ipv4 = data;
-      }
-    })
-    .catch(error => {
-      // error => Don't have other protocol.
-      document.querySelector('#only-ip').style.display = 'block';
-    });
-
   const dnsErrors = ["NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP",
     "REFUSED", "YXDOMAIN", "XRRSET", "NOTAUTH", "NOTZONE"];
 
@@ -163,9 +141,12 @@
       .then(r => r.json());
   }
 
-  async function fetchGeoIP(ip) {
-    return fetch("/.geoip/" + encodeURIComponent(ip))
-      .then(r => r.json());
+  async function fetchIPDetails(ip) {
+      return fetch("/" + encodeURIComponent(ip), {
+          headers: {
+            Accept: "application/json"
+          }
+        }).then(r => r.json());
   }
 
   async function fetchDNS(name) {
@@ -175,26 +156,24 @@
 
   async function ipv4details(ip) {
     const sel = '#ipv4-details';
-    countryDetails(sel, 'IPv4', geoip);
     let parts = ip.split('.');
     let name = parts.reverse().join('.') + ".in-addr.arpa";
     let result = await resolve(name);
     displayIPDetails(sel, ip, result);
-    if (!geoip['IPv4']) {
-      geoip['IPv4'] = await fetchGeoIP(ip);
-      countryDetails(sel, 'IPv4', geoip);
+    if (!ipDetails[ip]) {
+      ipDetails[ip] = await fetchIPDetails(ip);
     }
+    doIPDetails(sel, ip, ipDetails);
   }
 
   async function ipv6details(ip) {
     const sel = '#ipv6-details';
-    countryDetails(sel, 'IPv6', geoip);
     let result = await resolve(ipv6reverse(ip));
     displayIPDetails(sel, ip, result);
-    if (!geoip['IPv6']) {
-      geoip['IPv6'] = await fetchGeoIP(ip);
-      countryDetails(sel, 'IPv6', geoip);
+    if (!ipDetails[ip]) {
+      ipDetails[ip] = await fetchIPDetails(ip);
     }
+    doIPDetails(sel, ip, ipDetails);
   }
 
   function makeFlag(isoCode) {
@@ -207,17 +186,30 @@
     return res;
   }
 
-  function countryDetails(selector, cls, geoip) {
+  function doIPDetails(selector, cls, ipDetails) {
     let details = document.querySelector(selector);
     let flag = details.querySelector(".country");
-    if (geoip[cls] && geoip[cls].Country) {
-      let country = geoip[cls].Country;
-      flag.textContent = makeFlag(country);
-      flag.title = country;
-    } else if (geoip[cls]) {
-      const unknown = ["🛸", "👽"];
-      flag.textContent = unknown[Math.floor(unknown.length*Math.random())];
-      flag.title = "Unknown country!";
+    let asnText = details.querySelector(".asn");
+    if (ipDetails[cls]) {
+      if (ipDetails[cls].location.country) {
+        let country = ipDetails[cls].location.country;
+        flag.textContent = makeFlag(country);
+        flag.title = country;
+      } else {
+        const unknown = ["🛸", "👽"];
+        flag.textContent = unknown[Math.floor(unknown.length*Math.random())];
+        flag.title = "Unknown country!";
+      }
+      if (asnText) {
+        let num = ipDetails[cls].as.number;
+        if (num) {
+          asnText.textContent = num + " (" + ipDetails[cls].as.name + ")";
+        } else {
+          const unknown = ["⍰", "﹖"];
+          asnText.textContent = unknown[Math.floor(unknown.length*Math.random())];
+          asnText.title = "Unknown AS number!";
+        }
+      }
     } // otherwise waiting for the result
   }
 
@@ -387,10 +379,14 @@
         let flag = document.createElement("span");
         flag.className = "country";
         out.appendChild(flag);
-        fetchGeoIP(ip).then(geo => {
-            geoip["WebRTC"] = geo;
-            countryDetails(selector, "WebRTC", geoip);
-        });
+        if (!ipDetails[ip]) {
+          fetchIPDetails(ip).then(details => {
+            ipDetails[ip] = details;
+            doIPDetails(selector, ip, ipDetails);
+          });
+        } else {
+          doIPDetails(selector, ip, ipDetails);
+        }
         out.appendChild(document.createElement("br"));
         if (port) {
           out.appendChild(document.createTextNode("Source port: "));
@@ -440,7 +436,7 @@
     ipv6 = "{{ .IPv6 }}";
     document.title = "{{ .Host }}: {{ .IPv6 }}";
   {{ end }}
-  var geoip = {{ .GeoIP }};
+  var ipDetails = {{ .Details }};
 </script>
 
 <body>
@@ -472,6 +468,7 @@
           <br>
           Reverse DNS: <span class="host">⏳</span>
           <br>
+          <abbr title="Autonomous System">AS</abbr><span class="asn"></span>
           ↝ <a href="https://bgp.tools/search?q={{.IPv4}}">More details on bgp.tools</a>
         </td>
 
@@ -481,12 +478,40 @@
           <br>
           Reverse DNS: <span class="host">⏳</span>
           <br>
+          <abbr title="Autonomous System">AS</abbr><span class="asn"></span>
           ↝ <a href="https://bgp.tools/search?q={{.IPv6}}">More details on bgp.tools</a>
         </td>
       </tr>
     </table>
 
     <script>
+      fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
+        headers: {
+          Accept: "text/plain"
+        }
+      }).then(r => r.text())
+        .then(data => {
+          data = data.trim();
+          // Have other protocol IP address
+          let other = document.querySelector('#other-ip');
+          other.textContent = "{{ if .IPv4 }}IPv6{{ else }}IPv4{{ end }} address: "
+          let ip = document.createElement("b");
+          ip.textContent = data;
+          other.appendChild(ip)
+          document.querySelector('#extra-ip').style.display = 'block';
+          if (/:/.test(data)) {
+            ipv6details(data);
+            ipv6 = data;
+          } else {
+            ipv4details(data);
+            ipv4 = data;
+          }
+        })
+        .catch(error => {
+          // error => Don't have other protocol.
+          document.querySelector('#only-ip').style.display = 'block';
+        });
+
       {{ if .IPv4 }}
         ipv4details("{{.IPv4}}");
       {{ else }}

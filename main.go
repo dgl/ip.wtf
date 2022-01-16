@@ -24,7 +24,7 @@ var (
 	flagV4Host         = flag.String("v4-host", "127.0.0.1:8080", "Host for IPv4 access")
 	flagV6Host         = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
 	flagMaxMindDB      = flag.String("maxmind-db", "GeoLite2-City.mmdb", "MaxMind IP database")
-	flagMaxMindDBASN      = flag.String("maxmind-db-asn", "GeoLite2-ASN.mmdb", "MaxMind IP database for ASN")
+	flagMaxMindDBASN   = flag.String("maxmind-db-asn", "GeoLite2-ASN.mmdb", "MaxMind IP database for ASN")
 	flagAllowedMetrics = flag.String("allowed-metrics", "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,::1/128", "IPs allowed to fetch metrics")
 )
 
@@ -125,6 +125,11 @@ func hostRouter(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
 		dnsHandler(w, req)
 	} else if req.URL.Path == "/" {
 		ip(w, req, conn)
+	} else if len(req.URL.Path) <= 1 {
+		log.Printf("Bad request, weird path: %q", req.URL.Path)
+		http.Error(w, "Bad request", http.StatusBadRequest)
+	} else if ip := net.ParseIP(req.URL.Path[1:]); ip != nil {
+		ipDetails(w, req, conn)
 	} else {
 		http.Error(w, "Not found", http.StatusNotFound)
 	}
@@ -140,19 +145,20 @@ func connWrap(handler func(w http.ResponseWriter, req *http.Request, conn *Recor
 	}
 }
 
-type GeoIPInfo struct{ Country string }
-type ASNInfo struct { ASN interface{} }
-
 func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 
 	w.Header().Add("X-Super-Cow-Powers", "curl "+*flagHost+"/moo")
 
-	t := resolveAccept(req)
-	if t == Plain {
+	switch resolveAccept(req) {
+	case Plain:
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
 		w.Write([]byte(remoteAddr.IP.String() + "\n"))
+		return
+	case Json:
+		req.URL.Path = "/" + remoteAddr.IP.String()
+		ipDetails(w, req, rConn)
 		return
 	}
 
@@ -167,44 +173,6 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		return
 	}
 
-	geoIP := map[string]GeoIPInfo{}
-	ASN := map[string]ASNInfo{}
-	if mmDB != nil {
-		if v4 := remoteAddr.IP.To4(); v4 != nil {
-			record, err := mmDB.City(v4)
-			if err != nil {
-				log.Printf("MaxMind lookup for %v: %v", v4, err)
-			} else {
-				geoIP["IPv4"] = GeoIPInfo{record.Country.IsoCode}
-			}
-		} else {
-			record, err := mmDB.Country(remoteAddr.IP)
-			if err != nil {
-				log.Printf("MaxMind lookup for %v: %v", remoteAddr.IP, err)
-			} else {
-				geoIP["IPv6"] = GeoIPInfo{record.Country.IsoCode}
-			}
-		}
-	}
-
-	if mmDBASN != nil {
-		if v4 := remoteAddr.IP.To4(); v4 != nil {
-			record, err := mmDB.ASN(v4)
-			if err != nil {
-				log.Printf("MaxMind lookup for %v: %v", v4, err)
-			} else {
-				ASN["IPv4"] = ASNInfo{record}
-			}
-		} else {
-			record, err := mmDB.ASN(remoteAddr.IP)
-			if err != nil {
-				log.Printf("MaxMind lookup for %v: %v", remoteAddr.IP, err)
-			} else {
-				ASN["IPv6"] = ASNInfo{record}
-			}
-		}
-	}
-
 	var dnsID strings.Builder
 	b32 := base32.NewEncoder(base32.HexEncoding.WithPadding(base32.NoPadding), &dnsID)
 	_, err := io.CopyN(b32, rand.Reader, 12)
@@ -215,10 +183,12 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	b32.Close()
 
 	err = ipTmpl.Execute(w, map[string]interface{}{
-		"IPv4":         remoteAddr.IP.To4(),
-		"IPv6":         remoteAddr.IP,
-		"GeoIP":        geoIP,
-		"RemoteAddr":   remoteAddr,
+		"IPv4":       remoteAddr.IP.To4(),
+		"IPv6":       remoteAddr.IP,
+		"RemoteAddr": remoteAddr,
+		"Details": map[string]interface{}{
+			remoteAddr.IP.String(): lookupIP(remoteAddr.IP),
+		},
 		"RequestCount": rConn.read.count,
 		"Request":      string(rConn.read.read),
 		"Host":         *flagHost,
@@ -234,27 +204,63 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	}
 }
 
-func geoIP(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
-	p := strings.SplitN(req.URL.Path, "/", 3)
-	if len(p) != 3 {
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-	ip := net.ParseIP(p[2])
+func ipDetails(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
+	ip := net.ParseIP(req.URL.Path[1:])
 	if ip == nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
-	record, err := mmDB.Country(ip)
+	err := json.NewEncoder(w).Encode(lookupIP(ip))
 	if err != nil {
-		log.Printf("MaxMind lookup for %v: %v", ip, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func lookupIP(ip net.IP) (result *IPResult) {
+	result = &IPResult{
+		IP: ip.String(),
+	}
+
+	var shortIP net.IP
+	if v4 := ip.To4(); v4 != nil {
+		shortIP = v4
 	} else {
-		err := json.NewEncoder(w).Encode(
-			GeoIPInfo{record.Country.IsoCode})
+		shortIP = ip
+	}
+
+	if mmDB != nil {
+		record, err := mmDB.City(shortIP)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("MaxMind lookup for %v: %v", shortIP, err)
+		} else {
+			result.Location.Continent = record.Continent.Code
+			result.Location.ContinentName = record.Continent.Names["en"]
+
+			result.Location.Country = record.Country.IsoCode
+			result.Location.CountryName = record.Country.Names["en"]
+
+			result.Location.City = record.City.Names["en"]
+
+			result.Location.Latitude = record.Location.Latitude
+			result.Location.Longitude = record.Location.Longitude
+
+			result.Location.Timezone.Name = record.Location.TimeZone
+			// TODO: add offset
+
 		}
 	}
+
+	if mmDBASN != nil {
+		record, err := mmDBASN.ASN(shortIP)
+		if err != nil {
+			log.Printf("MaxMind lookup for %v: %v", shortIP, err)
+		} else {
+			result.AS.Number = int(record.AutonomousSystemNumber)
+			result.AS.Name = record.AutonomousSystemOrganization
+		}
+	}
+
+	return
 }
 
 func handleMetrics(w http.ResponseWriter, r *http.Request, rConn *RecordingConn) {
@@ -272,7 +278,7 @@ func handleMetrics(w http.ResponseWriter, r *http.Request, rConn *RecordingConn)
 func methodFilter(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" && r.Method != "POST" && r.Method != "HEAD" &&
-				r.Method != "OPTIONS" {
+			r.Method != "OPTIONS" {
 			http.Error(w, "Method not allowed", http.StatusBadRequest)
 			return
 		}
@@ -324,7 +330,6 @@ func main() {
 	handler("/", connWrap(hostRouter))
 	handler("/cowsay", connWrap(cowsay))
 	handler("/moo", connWrap(cowsay))
-	handler("/.geoip/", connWrap(geoIP))
 
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
 

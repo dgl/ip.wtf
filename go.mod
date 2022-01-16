@@ -1,4 +1,4 @@
-module github.com/dgl/ip.d.cx
+module github.com/dgl/ip.wtf
 
 go 1.13
 
