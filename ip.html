@@ -58,6 +58,11 @@
 
   .details .country {
     font-size: 145%;
+    vertical-align: middle;
+  }
+
+  .details .city {
+    vertical-align: middle;
   }
 
   #ipv4-details .country, #ipv6-details .country {
@@ -196,12 +201,17 @@
   function doIPDetails(selector, cls, ipDetails) {
     let details = document.querySelector(selector);
     let flag = details.querySelector(".country");
+    let city = details.querySelector(".city");
     let asnText = details.querySelector(".asn");
     if (ipDetails[cls]) {
       if (ipDetails[cls].location.country) {
-        let country = ipDetails[cls].location.country;
+        let location = ipDetails[cls].location;
+        let country = location.country;
         flag.textContent = makeFlag(country);
-        flag.title = ipDetails[cls].location.country_name;
+        flag.title = location.country_name;
+        if (city) {
+          city.textContent = location.city;
+        }
       } else {
         const unknown = ["🛸", "👽"];
         flag.textContent = unknown[Math.floor(unknown.length*Math.random())];
@@ -438,10 +448,14 @@
   var ipv4 = "", ipv6 = "";
   {{ if .IPv4 }}
     ipv4 = "{{ .IPv4 }}";
+    {{ if not .Spider }}
     document.title = "{{ .Host }}: {{ .IPv4 }}";
+    {{ end }}
   {{ else }}
     ipv6 = "{{ .IPv6 }}";
+    {{ if not .Spider }}
     document.title = "{{ .Host }}: {{ .IPv6 }}";
+    {{ end }}
   {{ end }}
   var ipDetails = {{ .Details }};
 </script>
@@ -476,7 +490,7 @@
         {{/* Most people with IPv6 currently also have IPv4, show loading to avoid reflow. */}}
         <td id="ipv4-details" class="details">
           <h3>IPv4 details</h3>
-          <span class="country">⏳</span>
+          <span class="country">⏳</span> <span class="city"></span>
           <br>
           Reverse DNS: <span class="host">⏳</span>
           <br>
@@ -486,7 +500,7 @@
 
         <td id="ipv6-details" class="details {{if .IPv4}}hidden{{end}}">
           <h3>IPv6 details</h3>
-          <span class="country">⏳</span>
+          <span class="country">⏳</span> <span class="city"></span>
           <br>
           Reverse DNS: <span class="host">⏳</span>
           <br>
@@ -509,54 +523,10 @@
       Number of <abbr title="HTTP requests over the same TCP connection due to keep-alive, reload quickly and see this increase, maybe!">
         requests</abbr> over this connection: <b>{{ .RequestCount }}</b>
       <br>
+      <script>
+        linkifyHTTP(document.querySelector("#http-request"));
+      </script>
     </div>
-
-    <script>
-      setTimeout(() => {
-      {{ if .IPv4 }}
-        ipv4details("{{.IPv4}}");
-      {{ else }}
-        ipv6details("{{.IPv6}}");
-      {{ end }}
-      }, 0);
-
-      linkifyHTTP(document.querySelector("#http-request"));
-
-      fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
-        headers: {
-          Accept: "application/json"
-        }
-      }).then(r => r.json())
-        .then(data => {
-          let ip = data.ip;
-          // Have other protocol IP address
-          let other = document.querySelector('#other-ip');
-          other.textContent = "{{ if .IPv4 }}IPv6{{ else }}IPv4{{ end }} address: "
-          let ipEl = document.createElement("b");
-          ipEl.textContent = ip;
-          other.appendChild(ipEl)
-          document.querySelector('#extra-ip').style.display = 'block';
-          document.querySelector('#ip-space').classList.add('hidden');
-          ipDetails[ip] = data;
-          if (/:/.test(ip)) {
-            ipv6details(ip);
-            ipv6 = ip;
-          } else {
-            ipv4details(ip);
-            ipv4 = ip;
-          }
-        })
-        .catch(error => {
-          // error => Don't have other protocol.
-          document.querySelector('#only-ip').style.display = 'block';
-          document.querySelector('#ip-space').classList.add('hidden');
-          if (!ipv4) {
-            // no IPv4 => IPv6 only, hide pre-emptively shown IPv4 cell.
-            let details = document.querySelector("#ipv4-details");
-            details.classList.add('hidden');
-          }
-        });
-    </script>
 
     <div class="details">
       <h3>Browser details</h3>
@@ -624,4 +594,47 @@
       <li><a href="https://twitter.com/ip_wtf">twitter</a>
     </ul>
   </footer>
+
+  <script>
+  {{ if .IPv4 }}
+    ipv4details("{{.IPv4}}");
+  {{ else }}
+    ipv6details("{{.IPv6}}");
+  {{ end }}
+
+    fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
+      headers: {
+        Accept: "application/json"
+      }
+    }).then(r => r.json())
+      .then(data => {
+        let ip = data.ip;
+        // Have other protocol IP address
+        let other = document.querySelector('#other-ip');
+        other.textContent = "{{ if .IPv4 }}IPv6{{ else }}IPv4{{ end }} address: "
+        let ipEl = document.createElement("b");
+        ipEl.textContent = ip;
+        other.appendChild(ipEl)
+        document.querySelector('#extra-ip').style.display = 'block';
+        document.querySelector('#ip-space').classList.add('hidden');
+        ipDetails[ip] = data;
+        if (/:/.test(ip)) {
+          ipv6details(ip);
+          ipv6 = ip;
+        } else {
+          ipv4details(ip);
+          ipv4 = ip;
+        }
+      })
+      .catch(error => {
+        // error => Don't have other protocol.
+        document.querySelector('#only-ip').style.display = 'block';
+        document.querySelector('#ip-space').classList.add('hidden');
+        if (!ipv4) {
+          // no IPv4 => IPv6 only, hide pre-emptively shown IPv4 cell.
+          let details = document.querySelector("#ipv4-details");
+          details.classList.add('hidden');
+        }
+      });
+  </script>
 </body>

@@ -12,7 +12,9 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/NYTimes/gziphandler"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -131,6 +133,7 @@ func hostRouter(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
 	} else if ip := net.ParseIP(req.URL.Path[1:]); ip != nil {
 		ipDetails(w, req, conn)
 	} else {
+		log.Printf("Not found: %q", req.URL.Path)
 		http.Error(w, "Not found", http.StatusNotFound)
 	}
 }
@@ -198,6 +201,7 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		"V6Host":       *flagV6Host,
 		"DNSHost":      ".dns." + *flagHost,
 		"DNSID":        dnsID.String(),
+		"Spider":       req.Header.Get("From") != "",
 	})
 
 	if err != nil {
@@ -322,7 +326,11 @@ func main() {
 	}
 
 	server := &http.Server{
-		ConnContext: ConnContext,
+		ConnContext:    ConnContext,
+		MaxHeaderBytes: 1 << 15,
+		ReadTimeout:    5 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		IdleTimeout:    60 * time.Second,
 	}
 
 	handler := func(path string, f http.HandlerFunc) {
@@ -330,7 +338,10 @@ func main() {
 			httpRequests.MustCurryWith(prometheus.Labels{"handler": path}), f)))
 	}
 
-	handler("/", connWrap(hostRouter))
+	http.Handle("/", gziphandler.GzipHandler(
+		methodFilter(promhttp.InstrumentHandlerCounter(
+			httpRequests.MustCurryWith(prometheus.Labels{"handler": "/"}),
+			http.HandlerFunc(connWrap(hostRouter))))))
 	handler("/cowsay", connWrap(cowsay))
 	handler("/moo", connWrap(cowsay))
 

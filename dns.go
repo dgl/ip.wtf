@@ -2,19 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/miekg/dns"
 )
-
-const port = 8053
 
 var (
 	SOA   = "@ SOA " + *flagHost + ". " + *flagHost + ". 2021010100 1800 900 0604800 60"
@@ -26,6 +24,8 @@ type DNSData struct {
 	EdnsSubnet string
 	Expire     time.Time
 }
+
+var dnsListen = flag.String("dns-listen", ":8053", "Port to listen on for DNS server")
 
 var dnsMap = map[string]DNSData{}
 
@@ -91,15 +91,19 @@ func dnsServe() {
 		w.WriteMsg(m)
 	})
 
+	if len(*dnsListen) == 0 {
+		return
+	}
+
 	go func() {
-		srv := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
+		srv := &dns.Server{Addr: *dnsListen, Net: "udp"}
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed to set udp listener %s\n", err.Error())
 		}
 	}()
 
 	go func() {
-		srv := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "tcp"}
+		srv := &dns.Server{Addr: *dnsListen, Net: "tcp"}
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatalf("Failed to set tcp listener %s\n", err.Error())
 		}
