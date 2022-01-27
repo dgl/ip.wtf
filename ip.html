@@ -35,12 +35,12 @@
   }
 
   .ipv4 {
-    font-size: 250%;
+    font-size: 280%;
     color: red;
   }
 
   .ipv6 {
-    font-size: 120%;
+    font-size: 150%;
     color: green;
   }
 
@@ -466,10 +466,12 @@
   </header>
   <article>
     <div class="ip">
-      {{ if .IPv4 }}You're using <a
-        href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>: <div
-        class="ipv4">{{ .IPv4 }}</div>
-      {{ else if .IPv6 }}You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>: <div class="ipv6">{{ .IPv6 }}</div>
+      {{ if .IPv4 }}
+        You're using <a href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>:
+        <div class="ipv4" id="ip">{{ .IPv4 }}</div>
+      {{ else if .IPv6 }}
+        You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>:
+        <div class="ipv6" id="ip">{{ .IPv6 }}</div>
       {{ end }}
     </div>
 
@@ -596,6 +598,12 @@
   </footer>
 
   <script>
+    (function(ipel) {
+      let n = 6;
+      while (ipel.scrollWidth > ipel.clientWidth)
+        ipel.style.fontSize = (ipel.clientWidth / n++) + "px"
+    })(document.querySelector("#ip"));
+
   {{ if .IPv4 }}
     ipv4details("{{.IPv4}}");
   {{ else }}
