@@ -282,6 +282,10 @@ func handleMetrics(w http.ResponseWriter, r *http.Request, rConn *RecordingConn)
 	hostRouter(w, r, rConn)
 }
 
+func healthz(w http.ResponseWriter, r *http.Request, rConn *RecordingConn) {
+	w.Write([]byte("ok\n"))
+}
+
 func methodFilter(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" && r.Method != "POST" && r.Method != "HEAD" &&
@@ -346,6 +350,7 @@ func main() {
 	handler("/moo", connWrap(cowsay))
 
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
+	http.HandleFunc("/healthz", connWrap(healthz))
 
 	l, err := net.Listen("tcp", *flagListen)
 	if err != nil {
