@@ -16,6 +16,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	"github.com/oschwald/geoip2-golang"
+	"github.com/pires/go-proxyproto"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -28,6 +29,7 @@ var (
 	flagMaxMindDB      = flag.String("maxmind-db", "GeoLite2-City.mmdb", "MaxMind IP database")
 	flagMaxMindDBASN   = flag.String("maxmind-db-asn", "GeoLite2-ASN.mmdb", "MaxMind IP database for ASN")
 	flagAllowedMetrics = flag.String("allowed-metrics", "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,::1/128", "IPs allowed to fetch metrics")
+	flagProxySupport   = flag.Bool("proxy-protocol", false, "Enable proxy protocol support on listener")
 )
 
 var allowedMetrics []net.IPNet
@@ -57,12 +59,19 @@ type RecordingListener struct {
 
 func (l RecordingListener) Accept() (net.Conn, error) {
 	rw, err := l.Listener.Accept()
-	return RecordingConn{Conn: rw, read: &readInfo{}}, err
+	var header *proxyproto.Header
+	if *flagProxySupport {
+		if pconn, ok := rw.(*proxyproto.Conn); ok {
+			header = pconn.ProxyHeader()
+		}
+	}
+	return RecordingConn{Conn: rw, read: &readInfo{}, Header: header}, err
 }
 
 type RecordingConn struct {
 	net.Conn
-	read *readInfo
+	read   *readInfo
+	Header *proxyproto.Header
 }
 
 type readInfo struct {
@@ -352,10 +361,16 @@ func main() {
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
 	http.HandleFunc("/healthz", connWrap(healthz))
 
+	go dnsServe()
+
 	l, err := net.Listen("tcp", *flagListen)
 	if err != nil {
 		log.Fatal(err)
 	}
-	go dnsServe()
-	log.Fatal(server.Serve(RecordingListener{l}))
+	if *flagProxySupport {
+		lr := &proxyproto.Listener{Listener: l}
+		log.Fatal(server.Serve(RecordingListener{lr}))
+	} else {
+		log.Fatal(server.Serve(RecordingListener{l}))
+	}
 }
