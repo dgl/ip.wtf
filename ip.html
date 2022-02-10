@@ -146,6 +146,8 @@
   const dnsErrors = ["NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP",
     "REFUSED", "YXDOMAIN", "XRRSET", "NOTAUTH", "NOTZONE"];
 
+  let stats = {};
+
   async function resolve(name, type="PTR") {
     return fetch("https://dns.google/resolve?name=" + encodeURIComponent(name)  + "&type=" + type)
       .then(r => r.json());
@@ -358,6 +360,7 @@
 
   function establishWebRTC(selector) {
     if (!window.RTCPeerConnection) {
+      stats.webrtc = -1;
       document.querySelector(selector).textContent = "No WebRTC support.";
       return;
     }
@@ -368,6 +371,7 @@
         let protocol = RegExp.$1;
         let ip = RegExp.$2;
         if (ip != "127.0.0.1" && ip != "::1" && ip != "0.0.0.0") {
+          stats.webrtc_local = 1;
           out.appendChild(document.createTextNode("Local (internal) address: " + ip));
           out.appendChild(document.createElement("br"));
         }
@@ -382,12 +386,14 @@
         let port = match[3];
         if (ip.match(/^(10\.|192\.168\.|172.(1[6789]|2\d|3[01])\.)/)) {
           if (!local) {
+            stats.webrtc_local = 1;
             out.appendChild(document.createTextNode("Local (internal) address: " + ip));
             out.appendChild(document.createElement("br"));
             local = true;
           }
           continue;
         }
+        stats.webrtc = ip.match(/::/) ? 6 : 4;
         out.appendChild(document.createTextNode("Source IP address: "));
         let b = document.createElement("b");
         b.textContent = ip + " ";
@@ -413,6 +419,7 @@
           out.appendChild(document.createElement("br"));
         }
         if (ip != ipv4 && ip != ipv6) {
+          stats.webrtc_diff = 1;
           out.appendChild(document.createTextNode(
             "Warning: IP found via WebRTC differs to HTTP IP, potential leakage!"));
         }
@@ -442,6 +449,16 @@
     };
     conn.createOffer({}).then(desc => conn.setLocalDescription(desc));
   }
+
+  window.addEventListener("load", e => {
+    setTimeout(() => {
+      fetch("/l", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([performance.getEntries()[0], stats]),
+      });
+    }, 2000);
+  });
 </script>
 
 <script>
@@ -611,8 +628,10 @@
 
   {{ if .IPv4 }}
     ipv4details("{{.IPv4}}");
+    stats.default = 4;
   {{ else }}
     ipv6details("{{.IPv6}}");
+    stats.default = 6;
   {{ end }}
 
     fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
@@ -634,9 +653,11 @@
         if (/:/.test(ip)) {
           ipv6details(ip);
           ipv6 = ip;
+          stats.other = 6;
         } else {
           ipv4details(ip);
           ipv4 = ip;
+          stats.other = 4;
         }
       })
       .catch(error => {

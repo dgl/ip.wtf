@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	"github.com/mmcloughlin/geohash"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/pires/go-proxyproto"
 	"github.com/prometheus/client_golang/prometheus"
@@ -297,8 +298,8 @@ func healthz(w http.ResponseWriter, r *http.Request, rConn *RecordingConn) {
 
 func methodFilter(f http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" && r.Method != "POST" && r.Method != "HEAD" &&
-			r.Method != "OPTIONS" {
+		if r.Method != http.MethodGet && r.Method != http.MethodPost && r.Method != http.MethodHead &&
+			r.Method != http.MethodOptions {
 			http.Error(w, "Method not allowed", http.StatusBadRequest)
 			return
 		}
@@ -360,6 +361,7 @@ func main() {
 
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
 	http.HandleFunc("/healthz", connWrap(healthz))
+	http.HandleFunc("/l", connWrap(logInfo))
 
 	go dnsServe()
 
@@ -373,4 +375,23 @@ func main() {
 	} else {
 		log.Fatal(server.Serve(RecordingListener{l}))
 	}
+}
+
+func logInfo(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
+	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
+	lookup := lookupIP(remoteAddr.IP)
+
+	var gh string
+	if lookup.Location.Latitude != 0 && lookup.Location.Longitude != 0 {
+		// 3 gives ~78km error, enough to check the user got a nearby server while
+		// preserving privacy.
+		gh = geohash.EncodeWithPrecision(lookup.Location.Latitude, lookup.Location.Longitude, 3)
+	}
+
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		return
+	}
+	defer req.Body.Close()
+	log.Printf("user-agent=%q country=%s geohash=%s body=%q", req.Header.Get("User-Agent"), lookup.Location.Country, gh, string(b))
 }
