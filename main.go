@@ -53,6 +53,7 @@ var mmDB *geoip2.Reader
 var mmDBASN *geoip2.Reader
 
 var ipTmpl = template.Must(template.ParseFiles("ip.html"))
+var shTmpl = template.Must(template.ParseFiles("sh.html"))
 
 type RecordingListener struct {
 	net.Listener
@@ -220,6 +221,14 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	}
 }
 
+func sh(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
+	err := shTmpl.Execute(w, map[string]interface{}{})
+	if err != nil {
+		log.Printf("templating failed: %v", err)
+		http.Error(w, "Failed rendering template", http.StatusInternalServerError)
+	}
+}
+
 func ipDetails(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	ip := net.ParseIP(req.URL.Path[1:])
 	if ip == nil {
@@ -358,6 +367,7 @@ func main() {
 			http.HandlerFunc(connWrap(hostRouter))))))
 	handler("/cowsay", connWrap(cowsay))
 	handler("/moo", connWrap(cowsay))
+	handler("/sh", connWrap(sh))
 
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
 	http.HandleFunc("/healthz", connWrap(healthz))
