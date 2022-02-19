@@ -176,7 +176,12 @@
     }
 
     window.addEventListener('load', e => {
-      output("Welcome to ip.wtf shell.\n");
+      let console = document.getElementById('console');
+      let line = document.createElement('span');
+      line.innerHTML = "Welcome to <a href='/'>ip.wtf</a> shell.";
+      console.appendChild(line);
+      let br = document.createElement('br');
+      console.appendChild(br);
       output("You can play wordle via DNS with: host -t txt guess.example.wd.ip.wtf\n\n");
 
       newInput();
