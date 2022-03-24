@@ -162,7 +162,7 @@
   }
 
   async function fetchDNS(name) {
-      return fetch("http://" + name + ".{{ .DNSID }}{{ .DNSHost }}")
+      return fetch("//" + name + ".{{ .DNSID }}{{ .DNSHost }}")
       .then(r => r.json());
   }
 
@@ -633,7 +633,7 @@
     stats.default = 6;
   {{ end }}
 
-    fetch("http://{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
+    fetch("//{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
       headers: {
         Accept: "application/json"
       }
