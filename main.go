@@ -31,6 +31,7 @@ var (
 	flagMaxMindDBASN   = flag.String("maxmind-db-asn", "GeoLite2-ASN.mmdb", "MaxMind IP database for ASN")
 	flagAllowedMetrics = flag.String("allowed-metrics", "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,::1/128", "IPs allowed to fetch metrics")
 	flagProxySupport   = flag.Bool("proxy-protocol", false, "Enable proxy protocol support on listener")
+	flagLocation       = flag.String("location", "", "Location of this node")
 )
 
 var allowedMetrics []net.IPNet
@@ -163,6 +164,7 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 
 	w.Header().Add("X-Super-Cow-Powers", "curl "+*flagHost+"/moo")
+	w.Header().Add("Cache-Control", "no-store")
 
 	switch resolveAccept(req) {
 	case Plain:
@@ -213,6 +215,7 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		"DNSHost":      ".dns." + *flagHost,
 		"DNSID":        dnsID.String(),
 		"Spider":       req.Header.Get("From") != "",
+		"NodeLocation": *flagLocation,
 	})
 
 	if err != nil {

@@ -462,17 +462,17 @@
 
 <script>
   var ipv4 = "", ipv6 = "";
-  {{ if .IPv4 }}
+  {{- if .IPv4 }}
     ipv4 = "{{ .IPv4 }}";
-    {{ if not .Spider }}
+    {{- if not .Spider }}
     document.title = "{{ .Host }}: {{ .IPv4 }}";
-    {{ end }}
-  {{ else }}
+    {{- end }}
+  {{- else }}
     ipv6 = "{{ .IPv6 }}";
     {{ if not .Spider }}
     document.title = "{{ .Host }}: {{ .IPv6 }}";
-    {{ end }}
-  {{ end }}
+    {{- end }}
+  {{- end }}
   var ipDetails = {{ .Details }};
 </script>
 
@@ -482,13 +482,13 @@
   </header>
   <article>
     <div class="ip">
-      {{ if .IPv4 }}
+      {{- if .IPv4 }}
         You're using <a href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>:
         <div class="ipv4" id="ip">{{ .IPv4 }}</div>
-      {{ else if .IPv6 }}
+      {{- else if .IPv6 }}
         You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>:
         <div class="ipv6" id="ip">{{ .IPv6 }}</div>
-      {{ end }}
+      {{- end }}
     </div>
 
     <div id="ip-space">
@@ -611,7 +611,8 @@
   </article>
 
   <footer>
-    <ul>
+    <ul {{- if .NodeLocation }} title="served by a node in {{.NodeLocation}}"
+    {{- end }}>
       <!--<li><a href="/about">about</a>-->
       <li><a href="https://github.com/dgl/ip.wtf">github</a>
       <li><a href="https://twitter.com/ip_wtf">twitter</a>
