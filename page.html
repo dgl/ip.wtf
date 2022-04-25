@@ -195,6 +195,13 @@
       {{ .Content }}
     </div>
   </article>
+  <script>
+    (function(ipel) {
+      let n = 6;
+      while (ipel.scrollWidth > ipel.clientWidth)
+        ipel.style.fontSize = (ipel.clientWidth / n++) + "px"
+    })(document.querySelector("#ip"));
+  </script>
   <footer>
     <ul {{- if .NodeLocation }} title="served by a node in {{.NodeLocation}}"
     {{- end }}>
