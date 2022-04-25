@@ -108,7 +108,7 @@
         });
       } else if (args[0] == 'ip') {
         return new Promise((resolve, reject) => {
-            fetch("http://ip.wtf", { headers: { "Accept": "text/plain" } }).then((response) => {
+            fetch("https://ip.wtf", { headers: { "Accept": "text/plain" } }).then((response) => {
             return response.text();
           }).catch((error) => {
             reject(error);
