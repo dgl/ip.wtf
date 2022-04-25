@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: WTFPL
+     NO WARRANTY.
+     Author: @davidgl
+     Your IP address spinning.
+-->
+<style>
+  body {
+    background: black;
+    color: rgb(221, 125, 37);
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    vertical-align: center;
+  }
+  #content {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  footer { font-size: 10px; position: absolute;
+        top: calc(100vh - 20px);
+        top: calc(var(--vh, 1vh) * 100 - 20px); }
+</style>
+<script>
+  // https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
+  let vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+
+  let main;
+  onload = async e => {
+    let b = document.querySelector("#content");
+    b.style.fontSize = b.clientHeight/1.5 + "px";
+    let i = 0;
+    let res = await fetch("https://v4.ip.wtf", { headers: { Accept: "text/plain" }});
+    let text = await res.text();
+    text = text.trim();
+    main = setInterval(e => {
+      let l = Math.floor(i++/10);
+      b.innerHTML = text.substr(0, l);
+      if (b.scrollWidth > b.clientWidth) {
+        b.style.fontSize = (b.clientWidth/l)*2 + "px";
+      }
+      if (l > text.length) {
+        let n = i - text.length*10;
+        if (n > 360) {
+          n *= n;
+        }
+        b.style.transform = "rotate(" + n % 360 + "deg)";
+      }
+    }, 30);
+  }
+</script>
+<div id="content"></div>
+<footer>spinning fun for <a href="/fun">ip.wtf</a>
+  by <a href="https://twitter.com/davidgl">@davidgl</a></footer>
