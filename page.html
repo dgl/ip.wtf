@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WTF is my IP⁉️</title>
+<style>
+  body {
+    margin: 0;
+  }
+
+  header {
+    padding-bottom: 12px;
+  }
+
+  .topemoji {
+    position: absolute;
+    top: 10px;
+    right: 4px;
+    font-size: 150%;
+  }
+
+  .topemoji a {
+    text-decoration: none;
+  }
+
+  h1 {
+    text-align: center;
+    font-style: italic;
+    padding: 8px;
+    border-bottom: 2px solid black;
+    margin-top: 0;
+    margin-bottom: 1.2rem;
+    background: #69f;
+  }
+
+  h1 a, .ip a {
+    color: black;
+  }
+
+  article {
+    margin: 0 auto;
+    width: 93%;
+  }
+
+  pre code {
+    display: block;
+    color: #333;
+    background-color: #f9f9f9;
+    padding: 4px 6px;
+    border: 1px solid #eee;
+    border-left-width: 20px;
+    line-height: 1.1;
+    overflow: auto;
+  }
+
+  @media only screen and (min-width: 768px) {
+    article {
+      width: 60%;
+    }
+  }
+
+  .ip {
+    text-align: center;
+    font-size: 150%;
+  }
+
+  .ipv4, .ipv6 {
+    font-weight: bold;
+  }
+
+  .ipv4 {
+    font-size: 280%;
+    color: red;
+  }
+
+  .ipv6 {
+    font-size: 150%;
+    color: green;
+  }
+
+  #extra-ip, #only-ip, #ip-space, .details {
+    margin-top: 2em;
+  }
+
+  .hidden, #extra-ip, #only-ip {
+    display: none;
+  }
+
+  .details a[href^="https://bgp.tools"] {
+    font-size: 90%;
+  }
+
+  .details .country {
+    font-size: 145%;
+    vertical-align: middle;
+  }
+
+  .details .city {
+    vertical-align: middle;
+  }
+
+  #ipv4-details .country, #ipv6-details .country {
+    font-size: 200%;
+    line-height: 1.2em;
+  }
+
+  .host {
+    line-height: 1.2em;
+  }
+
+  pre#http-request {
+    width: 100%;
+    overflow-y: scroll;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    background: #f0f0f0;
+  }
+
+  pre#http-request a {
+    color: black;
+    text-decoration: none;
+  }
+
+  pre#http-request a:hover {
+    text-decoration: underline;
+  }
+
+  table.details-table {
+    border: 0;
+    width: 100%;
+  }
+
+  .details-table td {
+    vertical-align: top;
+    width: 50%;
+  }
+
+  details {
+    margin-bottom: .5em;
+  }
+
+  details a {
+    padding-left: 1em;
+  }
+
+  summary:focus {
+    outline: none;
+  }
+
+  details ul {
+    list-style: none;
+  }
+
+  details ul li {
+    margin-left: 1em;
+    text-indent: -1em;
+  }
+
+  footer {
+    margin-top: 1.5em;
+    text-align: center;
+    font-size: 90%;
+  }
+
+  footer, footer a {
+    color: #ccc;
+  }
+
+  footer ul li {
+    display: inline;
+    list-style-type: none;
+  }
+
+  footer li:not(:first-child)::before {
+    content: " • ";
+  }
+</style>
+<body>
+  <header>
+    <div class="topemoji"><a href="/about">⁉️</a></div>
+    <h1>WTF is my <a href="/">IP address</a>?</h1>
+  </header>
+  <article>
+    <div class="ip">
+      {{- if .IPv4 }}
+        You're using <a href="https://en.wikipedia.org/wiki/IPv4">IPv4</a>:
+        <div class="ipv4" id="ip">{{ .IPv4 }}</div>
+      {{- else if .IPv6 }}
+        You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>:
+        <div class="ipv6" id="ip">{{ .IPv6 }}</div>
+      {{- end }}
+    </div>
+
+    <div class="content">
+      {{ .Content }}
+    </div>
+  </article>
+  <footer>
+    <ul {{- if .NodeLocation }} title="served by a node in {{.NodeLocation}}"
+    {{- end }}>
+      <li><a href="/about">about</a>
+      <li><a href="https://github.com/dgl/ip.wtf">github</a>
+      <li><a href="https://twitter.com/ip_wtf">twitter</a>
+    </ul>
+  </footer>
+</body>

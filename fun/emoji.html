@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: WTFPL
+     NO WARRANTY.
+     Author: @davidgl
+     Your IP address as emoji keycaps.
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { overflow: wrap; }
+  #ip{ position: absolute;
+    font-size: 10vh;
+    font-size: calc(var(--vh, 1vh) * 10);
+    top: calc(50vh - 10vh/2);
+    top: calc(50vh - var(--vh, 1vh) * 10/2);
+    letter-spacing: 1.5vh;
+    letter-spacing: calc(var(--vh, 1vh) * 1.5);
+    text-align: center; width: 99%; }
+  footer { font-size: 10px; position: absolute;
+        top: calc(100vh - 20px);
+        top: calc(var(--vh, 1vh) * 100 - 20px); }
+</style>
+<script>
+  // https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
+  let vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+</script>
+
+<script>
+  const ekzSequence = "0️⃣";
+
+  async function showIP() {
+    let res = await fetch("https://v4.ip.wtf", { headers: { Accept: "text/plain" }});
+    let ip = await res.text();
+    ip = ip.trim();
+    let out = "";
+    for (let c of ip.split("")) {
+      if (c == '.') {
+        out += "⚪";
+      } else {
+        out += ekzSequence.replace(/0/, c);
+      }
+    }
+    let el = document.querySelector('#ip');
+    el.textContent = out;
+    el.style.fontSize = (document.body.clientWidth / (out.length/1.1)) + "px";
+  }
+
+  showIP();
+</script>
+
+<div id="ip"></div>
+
+<footer>emoji fun for <a href="/fun">ip.wtf</a>
+  by <a href="https://twitter.com/davidgl">@davidgl</a></footer>

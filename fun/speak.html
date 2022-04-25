@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: WTFPL
+     NO WARRANTY.
+     Author: @davidgl
+     Speak your IP address.
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { overflow: hidden; }
+  #ip{ position: absolute;
+    font-size: 4vh;
+    font-size: calc(var(--vh, 1vh) * 5);
+    top: calc(50vh - 8vh);
+    top: calc(50vh - var(--vh, 1vh) * 8);
+    letter-spacing: 1.5vh;
+    letter-spacing: calc(var(--vh, 1vh) * 1.5);
+    text-align: center; width: 99%; }
+  footer { font-size: 10px; position: absolute;
+        top: calc(100vh - 20px);
+        top: calc(var(--vh, 1vh) * 100 - 20px); }
+</style>
+<script>
+  // https://css-tricks.com/the-trick-to-viewport-units-on-mobile/
+  let vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+</script>
+
+<script>
+  async function speakIP() {
+    let res = await fetch("https://ip.wtf", { headers: { Accept: "text/plain" }});
+    let ip = await res.text();
+    ip = ip.trim();
+
+    let el = document.querySelector('#ip');
+    if (!window.speechSynthesis)  {
+      el.textContent = "No speechSynthesis support in this browser, sorry.";
+      return;
+    }
+
+    el.textContent = "Click to hear IP address";
+    el.style.fontSize = (document.body.clientWidth / (ip.length)) + "px";
+
+    el.addEventListener("click", e => {
+      let speech = window.speechSynthesis;
+      let utter = new SpeechSynthesisUtterance(ip);
+      speech.speak(utter);
+
+      el.textContent = ip;
+      el.style.fontSize = (document.body.clientWidth / (ip.length)) + "px";
+    });
+  }
+
+  speakIP();
+</script>
+
+<div id="ip"></div>
+
+<footer>speech for <a href="/fun">ip.wtf</a>
+  by <a href="https://twitter.com/davidgl">@davidgl</a></footer>

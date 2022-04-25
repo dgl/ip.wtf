@@ -374,6 +374,9 @@ func main() {
 
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
 	http.HandleFunc("/healthz", connWrap(healthz))
+	http.HandleFunc("/about", connWrap(about))
+	http.HandleFunc("/fun", connWrap(fun))
+	http.HandleFunc("/fun/", connWrap(funThing))
 	http.HandleFunc("/l", connWrap(logInfo))
 
 	go dnsServe()

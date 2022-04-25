@@ -4,11 +4,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WTF is my IP⁉️</title>
 <style>
+  body {
+    margin: 0;
+  }
+
+  header {
+    padding-bottom: 12px;
+  }
+
+  .topemoji {
+    position: absolute;
+    top: 10px;
+    right: 4px;
+    font-size: 150%;
+  }
+
+  .topemoji a {
+    text-decoration: none;
+  }
+
   h1 {
     text-align: center;
-    padding-bottom: .2rem;
-    border-bottom: 2px solid goldenrod;
+    font-style: italic;
+    padding: 8px;
+    border-bottom: 2px solid black;
+    margin-top: 0;
     margin-bottom: 1.2rem;
+    background: #69f;
   }
 
   h1 a, .ip a {
@@ -479,6 +501,7 @@
 
 <body>
   <header>
+    <div class="topemoji"><a href="/fun">⁉️</a></div>
     <h1>WTF is my <a href="https://en.wikipedia.org/wiki/IP_address">IP address</a>?</h1>
   </header>
   <article>
@@ -614,7 +637,7 @@
   <footer>
     <ul {{- if .NodeLocation }} title="served by a node in {{.NodeLocation}}"
     {{- end }}>
-      <!--<li><a href="/about">about</a>-->
+      <li><a href="/about">about</a>
       <li><a href="https://github.com/dgl/ip.wtf">github</a>
       <li><a href="https://twitter.com/ip_wtf">twitter</a>
     </ul>
