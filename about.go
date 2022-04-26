@@ -64,20 +64,22 @@ func renderPage(page string, w http.ResponseWriter, req *http.Request, rConn *Re
 }
 
 func funThing(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
-	s := strings.SplitN(req.URL.Path, "/", 3)
-	if len(s) != 3 {
+	s := strings.Split(req.URL.Path, "/")
+	if len(s) < 2 {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
 
+	page := s[len(s)-1]
+
 	// Go validates Path but we'll make sure it's just simple characters as we
 	// directly serve it here.
-	for _, r := range s[2] {
+	for _, r := range page {
 		if r < 'a' || r > 'z' {
 			http.Error(w, "Not found", http.StatusNotFound)
 			return
 		}
 	}
 
-	http.ServeFile(w, req, fmt.Sprintf("fun/%s.html", s[2]))
+	http.ServeFile(w, req, fmt.Sprintf("fun/%s.html", page))
 }
