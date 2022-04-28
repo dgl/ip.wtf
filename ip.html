@@ -561,6 +561,11 @@
       Source <abbr title="Transmission Control Protocol, the layer below HTTP">
         TCP</abbr> port: <b>{{ .RemoteAddr.Port }}</b><br>
 
+      {{ if .TLS }}
+      <abbr title="Transport Layer Security, the way traffic is encrypted">TLS</abbr> version:
+        <b>{{ .TLS }}</b><br>
+      {{ end }}
+
       <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">
         HTTP request</abbr>:
       <pre id="http-request">{{ .Request }}</pre>

@@ -18,6 +18,7 @@ import (
 	"github.com/mmcloughlin/geohash"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/pires/go-proxyproto"
+	"github.com/pires/go-proxyproto/tlvparse"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -199,6 +200,14 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	}
 	b32.Close()
 
+	var sslVersion string
+	sslTLV, err := extractSSL(rConn.Header)
+	if err != nil {
+		log.Printf("extractSSL failed, ignoring: %v", err)
+	} else if sslTLV != nil {
+		sslVersion, _ = sslTLV.SSLVersion()
+	}
+
 	err = ipTmpl.Execute(w, map[string]interface{}{
 		"IPv4":       remoteAddr.IP.To4(),
 		"IPv6":       remoteAddr.IP,
@@ -206,6 +215,7 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		"Details": map[string]interface{}{
 			remoteAddr.IP.String(): lookupIP(remoteAddr.IP),
 		},
+		"TLS":          sslVersion,
 		"RequestCount": rConn.read.count,
 		"Request":      string(rConn.read.read),
 		"Host":         *flagHost,
@@ -382,6 +392,20 @@ func main() {
 	} else {
 		log.Fatal(server.Serve(RecordingListener{l}))
 	}
+}
+
+func extractSSL(header *proxyproto.Header) (*tlvparse.PP2SSL, error) {
+	tlvs, err := header.TLVs()
+	if err != nil {
+		return nil, err
+	}
+
+	if ssl, ok := tlvparse.FindSSL(tlvs); ok {
+		return &ssl, nil
+	}
+
+	// No SSL TLV, not an error.
+	return nil, nil
 }
 
 func logInfo(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
