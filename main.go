@@ -205,11 +205,13 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	b32.Close()
 
 	var sslVersion string
-	sslTLV, err := extractSSL(rConn.Header)
-	if err != nil {
-		log.Printf("extractSSL failed, ignoring: %v", err)
-	} else if sslTLV != nil {
-		sslVersion, _ = sslTLV.SSLVersion()
+	if rConn.Header != nil {
+		sslTLV, err := extractSSL(rConn.Header)
+		if err != nil {
+			log.Printf("extractSSL failed, ignoring: %v", err)
+		} else if sslTLV != nil {
+			sslVersion, _ = sslTLV.SSLVersion()
+		}
 	}
 
 	err = ipTmpl.Execute(w, map[string]interface{}{
