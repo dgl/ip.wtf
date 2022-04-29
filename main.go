@@ -56,6 +56,8 @@ var mmDBASN *geoip2.Reader
 
 var ipTmpl = template.Must(template.ParseFiles("ip.html"))
 
+// RecordingListener wraps a net.Listener and wraps the resulting accepted
+// connections in a RecordingConn.
 type RecordingListener struct {
 	net.Listener
 }
@@ -71,6 +73,7 @@ func (l RecordingListener) Accept() (net.Conn, error) {
 	return RecordingConn{Conn: rw, read: &readInfo{}, Header: header}, err
 }
 
+// RecordingConn wraps a net.Conn and records the data returned by Read.
 type RecordingConn struct {
 	net.Conn
 	read   *readInfo
@@ -87,6 +90,7 @@ func (c RecordingConn) Read(b []byte) (int, error) {
 	if err != nil {
 		return n, err
 	}
+	// Store the data returned by Read.
 	c.read.read = append(c.read.read, b[:n]...)
 	return n, err
 }
