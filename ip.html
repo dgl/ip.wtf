@@ -2,7 +2,17 @@
 <meta charset="UTF-8">
 <link rel="canonical" href="https://ip.wtf">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WTF is my IP⁉️</title>
+<title>
+  {{- if not .Spider -}}
+    {{- if .IPv4 -}}
+      {{- .Host }}: {{ .IPv4 }}
+    {{- else }}
+      {{- .Host }}: {{ .IPv6 }}
+    {{- end -}}
+  {{- else -}}
+    WTF is my IP⁉️
+  {{- end -}}
+</title>
 <style>
   body {
     margin: 0;
@@ -487,14 +497,8 @@
   var ipv4 = "", ipv6 = "";
   {{- if .IPv4 }}
     ipv4 = "{{ .IPv4 }}";
-    {{- if not .Spider }}
-    document.title = "{{ .Host }}: {{ .IPv4 }}";
-    {{- end }}
   {{- else }}
     ipv6 = "{{ .IPv6 }}";
-    {{ if not .Spider }}
-    document.title = "{{ .Host }}: {{ .IPv6 }}";
-    {{- end }}
   {{- end }}
   var ipDetails = {{ .Details }};
 </script>

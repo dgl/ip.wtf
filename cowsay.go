@@ -68,10 +68,8 @@ func cowsay(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		} else {
 			w.Write([]byte(cowsayText(50, fmt.Sprintf("It's fucking %v", ip), ipBCow, proto)))
 		}
-		if rand.Intn(4) > 2 {
-			// iTerm2 special, shame we can't work out what terminal is on the other end...
-			w.Write([]byte("\x1b]1337;RequestAttention=fireworks\a\r"))
-		}
+		// iTerm2 special, shame we can't work out what terminal is on the other end...
+		w.Write([]byte("\x1b]1337;RequestAttention=fireworks\a\r"))
 	}
 }
 
