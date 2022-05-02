@@ -195,7 +195,7 @@
   }
 
   async function fetchDNS(name) {
-      return fetch("//" + name + ".{{ .DNSID }}{{ .DNSHost }}")
+      return fetch("//" + name + "-{{ .DNSID }}{{ .DNSHost }}")
       .then(r => r.json());
   }
 
