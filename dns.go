@@ -14,18 +14,16 @@ import (
 	"github.com/miekg/dns"
 )
 
-var (
-	SOA   = "@ SOA " + *flagHost + ". " + *flagHost + ". 2021010100 1800 900 0604800 60"
-	CNAME = ". 0 CNAME " + *flagHost + "."
-)
-
 type DNSData struct {
 	IP         string
 	EdnsSubnet string
 	Expire     time.Time
 }
 
-var dnsListen = flag.String("dns-listen", ":8053", "Port to listen on for DNS server")
+var (
+	dnsListen = flag.String("dns-listen", ":8053", "Port to listen on for DNS server")
+  dnsIP = flag.String("dns-public-ip", "", "Public IP to return")
+)
 
 var dnsMap = map[string]DNSData{}
 
@@ -55,6 +53,9 @@ func MustNewRR(s string) dns.RR {
 }
 
 func dnsServe() {
+	SOA := "@ SOA " + *flagHost + ". " + *flagHost + ". 2021010100 1800 900 0604800 60"
+	myAddrA := ". 0 A " + *dnsIP
+
 	z := "dns." + *flagHost
 	rrx := MustNewRR("$ORIGIN " + z + ".\n" + SOA)
 	dns.HandleFunc(z, func(w dns.ResponseWriter, r *dns.Msg) {
@@ -85,13 +86,17 @@ func dnsServe() {
 				EdnsSubnet: subnet,
 				Expire:     time.Now().Add(2 * time.Minute),
 			}
-			rr := MustNewRR(name + CNAME)
+			rr := MustNewRR(name + myAddrA)
 			m.Answer = []dns.RR{rr}
 		}
 		w.WriteMsg(m)
 	})
 
 	if len(*dnsListen) == 0 {
+		return
+	}
+
+	if len(*dnsIP) == 0 {
 		return
 	}
 
