@@ -205,12 +205,14 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	b32.Close()
 
 	var sslVersion string
+	var sslCipher string
 	if rConn.Header != nil {
 		sslTLV, err := extractSSL(rConn.Header)
 		if err != nil {
 			log.Printf("extractSSL failed, ignoring: %v", err)
 		} else if sslTLV != nil {
 			sslVersion, _ = sslTLV.SSLVersion()
+			sslCipher, _ = sslTLV.SSLCipher()
 		}
 	}
 
@@ -222,6 +224,7 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 			remoteAddr.IP.String(): lookupIP(remoteAddr.IP),
 		},
 		"TLS":          sslVersion,
+		"TLSCipher":    sslCipher,
 		"RequestCount": rConn.read.count,
 		"Request":      string(rConn.read.read),
 		"Host":         *flagHost,

@@ -567,7 +567,7 @@
 
       {{ if .TLS }}
       <abbr title="Transport Layer Security, the way traffic is encrypted">TLS</abbr> version:
-        <b>{{ .TLS }}</b><br>
+        <b title="{{ .TLSCipher }}">{{ .TLS }}</b><br>
       {{ end }}
 
       <br>Raw <abbr title="The actual request your browser (or a proxy in-between) sent to this server over Hypertext Transfer Protocol (HTTP)">
