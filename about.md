@@ -99,6 +99,10 @@ This site does not use cookies, or store data on your device.
 This product includes GeoLite2 data created by MaxMind, available from
 <a href="https://www.maxmind.com">https://www.maxmind.com</a>.
 
+## Sponsor
+
+If you like this, you can say thank you: https://ko-fi.com/webgl
+
 ## Contact
 
 You can find us on [Twitter](https://twitter.com/ip_wtf) or you can email us
