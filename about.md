@@ -101,7 +101,8 @@ This product includes GeoLite2 data created by MaxMind, available from
 
 ## Sponsor
 
-If you like this, you can say thank you: https://ko-fi.com/webgl
+If you like this, you can say thank you:
+[ko-fi.com/webgl](https://ko-fi.com/webgl).
 
 ## Contact
 
