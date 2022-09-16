@@ -36,7 +36,5 @@ That's it.
 
 ## Licence
 
-Given these will be hosted on `ip.wtf` it is only appropriate these creations
-should be licensed under "WTFPLv2, no warranty". By submitting a PR you're
-agreeing to this, unless you change the `SPDX-License-Identifier` in your
-submission (`MIT` would be a suitable alternative.)
+These are under 0BSD, by submitting a PR you're agreeing to this, unless you
+change the `SPDX-License-Identifier` in your submission.
