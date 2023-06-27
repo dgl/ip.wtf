@@ -482,15 +482,6 @@
     };
     conn.createOffer({}).then(desc => conn.setLocalDescription(desc));
   }
-
-  window.addEventListener("load", _ =>
-      setTimeout(_ =>
-          fetch("/l", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([performance.getEntries()[0], stats])
-          }),
-        2000));
 </script>
 
 <script>

@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	"github.com/mmcloughlin/geohash"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/pires/go-proxyproto"
 	"github.com/pires/go-proxyproto/tlvparse"
@@ -137,6 +136,10 @@ ACCEPT:
 		return Plain
 	}
 	if mode := req.Header.Get("Sec-Fetch-Mode"); mode == "cors" {
+		return Plain
+	}
+	if !strings.Contains(ua, "/") && len(accepts) == 1 && accepts[0] == "" {
+		// No Accept header and User-Agent doesn't look like a real browser.
 		return Plain
 	}
 	return Html
@@ -365,6 +368,8 @@ func main() {
 		allowedMetrics = append(allowedMetrics, *n)
 	}
 
+	sandboxSelf()
+
 	server := &http.Server{
 		ConnContext:    ConnContext,
 		MaxHeaderBytes: 1 << 15,
@@ -391,7 +396,6 @@ func main() {
 	http.HandleFunc("/about", connWrap(about))
 	http.HandleFunc("/fun", connWrap(fun))
 	http.HandleFunc("/fun/", connWrap(funThing))
-	http.HandleFunc("/l", connWrap(logInfo))
 
 	go dnsServe()
 
@@ -399,6 +403,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	if *flagProxySupport {
 		lr := &proxyproto.Listener{Listener: l}
 		log.Fatal(server.Serve(RecordingListener{lr}))
@@ -419,23 +424,4 @@ func extractSSL(header *proxyproto.Header) (*tlvparse.PP2SSL, error) {
 
 	// No SSL TLV, not an error.
 	return nil, nil
-}
-
-func logInfo(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
-	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
-	lookup := lookupIP(remoteAddr.IP)
-
-	var gh string
-	if lookup.Location.Latitude != 0 && lookup.Location.Longitude != 0 {
-		// 3 gives ~78km error, enough to check the user got a nearby server while
-		// preserving privacy.
-		gh = geohash.EncodeWithPrecision(lookup.Location.Latitude, lookup.Location.Longitude, 3)
-	}
-
-	b, err := io.ReadAll(req.Body)
-	if err != nil {
-		return
-	}
-	defer req.Body.Close()
-	log.Printf("user-agent=%q country=%s geohash=%s body=%q", req.Header.Get("User-Agent"), lookup.Location.Country, gh, string(b))
 }
