@@ -330,8 +330,10 @@
             if (ref[item] && !output) {
               output = true;
             }
-            if (typeof(ref[item]) == "object" && n < 2) {
-              if (!dumpInner(el, ref[item], n+1)) {
+            if (typeof(ref[item]) == "object" && n < 4) {
+              if (ref[item] && ref[item] instanceof Plugin) {
+                  el.textContent = item + ": " + ref[item].name + " (" + ref[item].filename + ")"
+              } else if (!dumpInner(el, ref[item], n+1)) {
                 // nothing interesting, drop this too
                 continue;
               }
@@ -551,7 +553,7 @@
     </table>
 
     <div class="details">
-      <h3>HTTP connection details</h3>
+      <h3>Connection details</h3>
 
       Source <abbr title="Transmission Control Protocol, the layer below HTTP">
         TCP</abbr> port: <b>{{ .RemoteAddr.Port }}</b><br>
