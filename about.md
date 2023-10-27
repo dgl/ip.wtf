@@ -44,7 +44,7 @@ Which gives you:
   (async function() {
     let res = await fetch("https://ip.wtf", { headers: { Accept: "application/json" } });
     let data = await res.json();
-    document.querySelector("#json-output").textContent = JSON.stringify(data, "", "  ");
+    p = document.querySelector("#json-output").textContent = JSON.stringify(data, "", "  ");
   })();
 </script>
 
@@ -92,7 +92,7 @@ a third party DNS provider (Google Public DNS, see
 
 Any information collected that identifies your IP address is not stored for
 longer than one day, unless necessary to prevent abuse of the site, or if you
-otherwise share the data with us (e.g. send us an email, Twitter, etc).
+otherwise share the data with us (e.g. send us an email, etc.).
 
 This site does not use cookies, or store data on your device.
 
@@ -102,28 +102,47 @@ This product includes GeoLite2 data created by MaxMind, available from
 ## Sponsor
 
 If you like this, you can say thank you:
-[ko-fi.com/webgl](https://ko-fi.com/webgl).
+[ko-fi.com/webgl](https://ko-fi.com/webgl). See <a href="https://dgl.c&#x78;/"
+id="me">dgl.cx</a> for more on my projects.
 
 ## Contact
 
-You can find us on [Twitter](https://twitter.com/ip_wtf) or you can email us
-here (click twice due to abuse prevention measures).
+You can <span id="contact-link"> <noscript><a href="https://dgl.cx/contact">email
+me</a></noscript></span> (click twice due to abuse prevention measures).
 
-<span id="contact-us"></span>
+<style>
+  #contact-link { text-decoration: underline; color: blue; }
+</style>
 
 <script>
-const t = "Contact us";
+const sd = {{ if .Devel }}"ip.wtf";{{ else }}location.hostname.split(/\./).slice(-2).join("");{{ end }}
+const t = "email me";
+
 let a = document.createElement("a");
-if (window.name.length == 4) {
-  const h = (window.name + "\x2eoo").split(/\./).slice(-2);
-  const m = location.hostname.split(/\./).slice(-2).join("") + '\x40' + h.reverse().join(".");
-  a.href = "\x6d\x61\x69\x6c\x74\x6f\x3a" + m + "?body=" +
-    encodeURIComponent("[Please put your words here]");
+{{ if ($.Request.FormValue "cy_") -}}
+if (name.length == 2) {
+  const h = (window.name + "\x2edgl").split(/\./).slice(-2);
+  const m = "web-contact-" + sd + '\x40' + h.reverse().join(".");
+  a.href = "\x6d\x61\x69\x6c\x74\x6f\x3a" + m;
   a.textContent = t + ": " + m;
-} else {
-  a.addEventListener("click", e => { window.name = "fail" });
+} else {{ end -}}
+{
+  (async function() {
+    let res = await fetch("https://8.8.8.8/resolve?name=__" + ([...document.querySelectorAll("h2")].at(-1).id) + "." + sd + "&type=TXT");
+    let data = await res.json();
+    x = data.Answer[0].data;
+  })();
+  a.addEventListener("click", e => { name = document.querySelector("#me").href.match(/\.(..)\//)[1] });
   a.textContent = t;
-  a.href = "";
+  let pp; pp = () => {
+    if (window.p && window.x)
+      a.href = "/about?" + window.p.match(new RegExp(x.replace(/x(..)/g, (_,x)=>String.fromCharCode(parseInt(x, 16)))))[2] + "=" + Math.random() + "#contact";
+    else
+      setTimeout(pp, 100);
+  };
+  window.addEventListener("mousemove", pp);
+  window.addEventListener("keypress", pp);
+  window.addEventListener("touchstart", pp);
 }
-document.querySelector('#contact-us').appendChild(a);
-</script>.
+document.querySelector('#contact-link').appendChild(a);
+</script>

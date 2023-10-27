@@ -52,12 +52,28 @@ func renderPage(page string, w http.ResponseWriter, req *http.Request, rConn *Re
 		return
 	}
 
-	if err := pageTmpl.Execute(w, map[string]interface{}{
-		"Content":    template.HTML(buf.String()),
+	params := map[string]interface{}{
 		"IPv4":       remoteAddr.IP.To4(),
 		"IPv6":       remoteAddr.IP,
 		"RemoteAddr": remoteAddr,
-	}); err != nil {
+		"Request":    req,
+		"Devel":      len(*flagLocation) == 0,
+	}
+
+	mdBuf := strings.Builder{}
+	mdTmpl, err := template.New(page).Parse(buf.String())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := mdTmpl.Execute(&mdBuf, params); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	params["Content"] = template.HTML(mdBuf.String())
+
+	if err := pageTmpl.Execute(w, params); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
