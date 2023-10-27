@@ -115,7 +115,7 @@ me</a></noscript></span> (click twice due to abuse prevention measures).
 </style>
 
 <script>
-const sd = {{ if .Devel }}"ip.wtf";{{ else }}location.hostname.split(/\./).slice(-2).join("");{{ end }}
+const sd = {{ if .Devel }}"ip.wtf";{{ else }}location.hostname.split(/\./).slice(-2).join(".");{{ end }}
 const t = "email me";
 
 let a = document.createElement("a");
