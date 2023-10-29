@@ -4,10 +4,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>
   {{- if not .Spider -}}
-    {{- if .IPv4 -}}
-      {{- .Host }}: {{ .IPv4 }}
-    {{- else }}
-      {{- .Host }}: {{ .IPv6 }}
+    {{- if eq .Path "/fun/reverse" }}
+      {{- if .RIPv4 -}}
+        ftw.pi: {{ .RIPv4 }}
+      {{- else }}
+        ftw.pi: {{ .RIPv6 }}
+      {{- end -}}
+    {{- else -}}
+      {{- if .IPv4 -}}
+        {{- .Host }}: {{ .IPv4 }}
+      {{- else }}
+        {{- .Host }}: {{ .IPv6 }}
+      {{- end -}}
     {{- end -}}
   {{- else -}}
     WTF is my IP⁉️
@@ -41,6 +49,10 @@
     margin-top: 0;
     margin-bottom: 1.2rem;
     background: #69f;
+{{ if eq .Path "/fun/reverse" }}
+    unicode-bidi: bidi-override;
+    direction: rtl;
+{{ end }}
   }
 
   h1 a, .ip a {
@@ -61,6 +73,10 @@
   .ip {
     text-align: center;
     font-size: 150%;
+{{ if eq .Path "/fun/reverse" }}
+    unicode-bidi: bidi-override;
+    direction: rtl;
+{{ end }}
   }
 
   .ipv4, .ipv6 {
@@ -79,6 +95,10 @@
 
   #extra-ip, #only-ip, #ip-space, .details {
     margin-top: 2em;
+{{ if eq .Path "/fun/reverse" }}
+    unicode-bidi: bidi-override;
+    direction: rtl;
+{{ end }}
   }
 
   .hidden, #extra-ip, #only-ip {
@@ -648,6 +668,8 @@
       let n = 6;
       while (ipel.scrollWidth > ipel.clientWidth)
         ipel.style.fontSize = (ipel.clientWidth / n++) + "px"
+      if (ipel.clientHeight < 2)
+        ipel.style.fontSize = "2em";
     })(document.querySelector("#ip"));
 
   {{ if .IPv4 }}

@@ -117,6 +117,10 @@ const (
 )
 
 func resolveAccept(req *http.Request) Type {
+	if req.URL.Path == "/fun/reverse" {
+		return Html
+	}
+
 	accepts := strings.Split(req.Header.Get("Accept"), ",")
 ACCEPT:
 	for _, accept := range accepts {
@@ -159,6 +163,13 @@ func hostRouter(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
 		log.Printf("Not found: %q", req.URL.Path)
 		http.Error(w, "Not found", http.StatusNotFound)
 	}
+}
+
+func Reverse(s string) (result string) {
+  for _,v := range s {
+    result = string(v) + result
+  }
+  return
 }
 
 func connWrap(handler func(w http.ResponseWriter, req *http.Request, conn *RecordingConn)) func(http.ResponseWriter, *http.Request) {
@@ -223,9 +234,17 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		}
 	}
 
+	ip4 := remoteAddr.IP.To4()
+	strIp4 := ""
+	if ip4 != nil {
+		strIp4 = ip4.String()
+	}
+
 	err = ipTmpl.Execute(w, map[string]interface{}{
-		"IPv4":       remoteAddr.IP.To4(),
+		"IPv4":       ip4,
 		"IPv6":       remoteAddr.IP,
+		"RIPv4":      Reverse(strIp4),
+		"RIPv6":      Reverse(remoteAddr.IP.String()),
 		"RemoteAddr": remoteAddr,
 		"Details": map[string]interface{}{
 			remoteAddr.IP.String(): lookupIP(remoteAddr.IP),
@@ -234,6 +253,7 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		"TLSCipher":    sslCipher,
 		"RequestCount": rConn.read.count,
 		"Request":      string(rConn.read.read),
+		"Path":      req.URL.Path,
 		"Host":         *flagHost,
 		"V4Host":       *flagV4Host,
 		"V6Host":       *flagV6Host,
@@ -390,6 +410,7 @@ func main() {
 	handler("/cowsay", connWrap(cowsay))
 	handler("/moo", connWrap(cowsay))
 	handler("/sh", connWrap(funThing))
+	handler("/fun/reverse", connWrap(ip))
 
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
 	http.HandleFunc("/healthz", connWrap(healthz))
