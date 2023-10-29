@@ -81,6 +81,10 @@
 
   .ipv4, .ipv6 {
     font-weight: bold;
+{{ if eq .Path "/fun/reverse" }}
+    unicode-bidi: bidi-override;
+    direction: rtl;
+{{ end }}
   }
 
   .ipv4 {
