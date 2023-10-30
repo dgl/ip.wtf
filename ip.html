@@ -198,8 +198,55 @@
   footer li:not(:first-child)::before {
     content: " • ";
   }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background: #111;
+      color: #ddd;
+    }
+
+    h1 {
+      background: #049;
+      border-bottom: 2px solid #bbb;
+    }
+
+    h1 a, .ip a {
+      color: #ddd;
+    }
+
+    pre#http-request {
+      background: #444;
+    }
+
+    pre {
+      color: #ddd;
+    }
+
+    pre#http-request a {
+      color: #ddd;
+    }
+
+    a {
+      color: #ccf;
+    }
+  }
 </style>
 <script>
+  let today = new Date();
+  let ds = (1+today.getMonth()) + "-" + today.getDate();
+  const specials = [
+    [ /^10-3[01]/, "ah.css" ],
+  ];
+  for (let s of specials) {
+    if (s[0].test(ds)) {
+      var link  = document.createElement("link");
+      link.rel  = "stylesheet";
+      link.type = "text/css";
+      link.href = "/.static/" + s[1];
+      document.head.appendChild(link);
+    }
+  }
+
   const dnsErrors = ["NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP",
     "REFUSED", "YXDOMAIN", "XRRSET", "NOTAUTH", "NOTZONE"];
 

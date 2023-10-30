@@ -356,6 +356,12 @@ func methodFilter(f http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func fsWrap(f http.Handler) func(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
+	return func(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
+		f.ServeHTTP(w, req)
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -403,6 +409,8 @@ func main() {
 			httpRequests.MustCurryWith(prometheus.Labels{"handler": path}), f)))
 	}
 
+	fs := http.FileServer(http.Dir("static"))
+
 	http.Handle("/", gziphandler.GzipHandler(
 		methodFilter(promhttp.InstrumentHandlerCounter(
 			httpRequests.MustCurryWith(prometheus.Labels{"handler": "/"}),
@@ -411,6 +419,7 @@ func main() {
 	handler("/moo", connWrap(cowsay))
 	handler("/sh", connWrap(funThing))
 	handler("/fun/reverse", connWrap(ip))
+	handler("/.static/", connWrap(fsWrap(http.StripPrefix("/.static/", fs))))
 
 	http.HandleFunc("/metrics", connWrap(handleMetrics))
 	http.HandleFunc("/healthz", connWrap(healthz))

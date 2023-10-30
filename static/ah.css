@@ -1,0 +1,21 @@
+h1 {
+  background: #320;
+  color: white;
+}
+
+h1 a {
+  color: white;
+}
+
+h1::before, h1::after {
+  content: " 🎃🎃 ";
+}
+
+h3::after {
+  content: "   🐈‍⬛";
+}
+
+footer::before {
+  content: "🕸️🪦🕸️";
+  font-size: 4em;
+}
