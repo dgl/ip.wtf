@@ -1,0 +1,16 @@
+h1::before, h1::after {
+  content: " 🎆🎆 ";
+}
+
+h3:nth-child(odd)::after {
+  content: " 🎉";
+}
+
+h3:nth-child(even)::after {
+  content: " 🥳";
+}
+
+footer::before {
+  content: "🎊🌃🎊";
+  font-size: 4em;
+}

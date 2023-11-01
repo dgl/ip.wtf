@@ -3,8 +3,8 @@
 <link rel="canonical" href="https://ip.wtf">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>
-  {{- if not .Spider -}}
-    {{- if eq .Path "/fun/reverse" }}
+  {{- if eq (.RawRequest.Header.Get "From") "" -}}
+    {{- if eq .RawRequest.URL.Path "/fun/reverse" }}
       {{- if .RIPv4 -}}
         ftw.pi: {{ .RIPv4 }}
       {{- else }}
@@ -49,7 +49,7 @@
     margin-top: 0;
     margin-bottom: 1.2rem;
     background: #69f;
-{{ if eq .Path "/fun/reverse" }}
+{{ if eq .RawRequest.URL.Path "/fun/reverse" }}
     unicode-bidi: bidi-override;
     direction: rtl;
 {{ end }}
@@ -73,7 +73,7 @@
   .ip {
     text-align: center;
     font-size: 150%;
-{{ if eq .Path "/fun/reverse" }}
+{{ if eq .RawRequest.URL.Path "/fun/reverse" }}
     unicode-bidi: bidi-override;
     direction: rtl;
 {{ end }}
@@ -81,7 +81,7 @@
 
   .ipv4, .ipv6 {
     font-weight: bold;
-{{ if eq .Path "/fun/reverse" }}
+{{ if eq .RawRequest.URL.Path "/fun/reverse" }}
     unicode-bidi: bidi-override;
     direction: rtl;
 {{ end }}
@@ -99,7 +99,7 @@
 
   #extra-ip, #only-ip, #ip-space, .details {
     margin-top: 2em;
-{{ if eq .Path "/fun/reverse" }}
+{{ if eq .RawRequest.URL.Path "/fun/reverse" }}
     unicode-bidi: bidi-override;
     direction: rtl;
 {{ end }}
@@ -230,27 +230,22 @@
       color: #ccf;
     }
   }
+{{ if eq (.RawRequest.Header.Get "Sec-CH-UA-Platform") "\"Windows\"" }}
+  @font-face {
+    font-family: "Twemoji Country Flags";
+    unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067,
+      U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+    src: url('/.static/TwemojiCountryFlags.woff2') format('woff2');
+    font-display: swap;
+  }
+  * {
+    font-family: "Twemoji Country Flags", serif;
+  }
+{{ end }}
 </style>
 <script>
-  let today = new Date();
-  let ds = (1+today.getMonth()) + "-" + today.getDate();
-  const specials = [
-    [ /^10-3[01]/, "ah.css" ],
-  ];
-  for (let s of specials) {
-    if (s[0].test(ds)) {
-      var link  = document.createElement("link");
-      link.rel  = "stylesheet";
-      link.type = "text/css";
-      link.href = "/.static/" + s[1];
-      document.head.appendChild(link);
-    }
-  }
-
   const dnsErrors = ["NOERROR", "FORMERR", "SERVFAIL", "NXDOMAIN", "NOTIMP",
     "REFUSED", "YXDOMAIN", "XRRSET", "NOTAUTH", "NOTZONE"];
-
-  let stats = {};
 
   async function resolve(name, type="PTR") {
     return fetch("https://dns.google/resolve?name=" + encodeURIComponent(name)  + "&type=" + type)
@@ -466,7 +461,6 @@
 
   function establishWebRTC(selector) {
     if (!window.RTCPeerConnection) {
-      stats.webrtc = -1;
       document.querySelector(selector).textContent = "No WebRTC support.";
       return;
     }
@@ -477,7 +471,6 @@
         let protocol = RegExp.$1;
         let ip = RegExp.$2;
         if (ip != "127.0.0.1" && ip != "::1" && ip != "0.0.0.0") {
-          stats.webrtc_local = 1;
           out.appendChild(document.createTextNode("Local (internal) address: " + ip));
           out.appendChild(document.createElement("br"));
         }
@@ -492,14 +485,12 @@
         let port = match[3];
         if (ip.match(/^(10\.|192\.168\.|172.(1[6789]|2\d|3[01])\.)/)) {
           if (!local) {
-            stats.webrtc_local = 1;
             out.appendChild(document.createTextNode("Local (internal) address: " + ip));
             out.appendChild(document.createElement("br"));
             local = true;
           }
           continue;
         }
-        stats.webrtc = ip.match(/::/) ? 6 : 4;
         out.appendChild(document.createTextNode("Source IP address: "));
         let b = document.createElement("b");
         b.textContent = ip + " ";
@@ -525,7 +516,6 @@
           out.appendChild(document.createElement("br"));
         }
         if (ip != ipv4 && ip != ipv6) {
-          stats.webrtc_diff = 1;
           out.appendChild(document.createTextNode(
             "Warning: IP found via WebRTC differs to HTTP IP, potential leakage!"));
         }
@@ -723,12 +713,55 @@
         ipel.style.fontSize = "2em";
     })(document.querySelector("#ip"));
 
+    function condCheck(x) {
+      let d = ipDetails["{{ if .IPv4 }}{{.IPv4}}{{ else }}{{.IPv6}}{{ end }}"];
+      for (const c of x) {
+        if (c == d.location.country)
+          return true;
+      }
+      return false;
+    }
+
+    let today = new Date();
+    let ds = (1+today.getMonth()) + "-" + today.getDate() + "-" + today.getDay() + "-" +
+      (1+Math.floor(today.getDate() / 7));
+    // todo: add diwali, easter, chinese new year, etc...
+    const specials = [
+      [ /^2-14/, "vt.css" ],
+      [ /^3-17/, "sp.css" ],
+      [ /^4-22/, "ed.css" ],
+      [ /^4-25/, "anzac.css", ["AU", "NZ", "CX", "CC", "CK", "NU", "NF", "TK", "TO"] ],
+      [ /^6-19/, "jt.css" ],
+      [ /^7-4/, "id.css", ["US"] ],
+      [ /^7-17/, "emoji.css" ],
+      [ /^10-\d+-1-2/, "tg.css", ["CA"] ],
+      [ /^10-3[01]/, "ah.css" ],
+      [ /^11-5/, "gf.css", ["UK"] ],
+      [ /^11-11/, "lestweforget.css", ["UK", "US", "CA", "AU", "ZA", "NZ" ] ],
+      [ /^11-\d+-4-4/, "tg.css", ["US"] ],
+      [ /^11-\d+-5-4/, "bf.css", ["US", "UK", "CA", "AU", "NZ"] ],
+      [ /^12-[123]\d/, "xm.css" ],
+      [ /^12-[23]\d/, "xm2.css" ],
+      [ /^12-31/, "ny.css" ],
+    ];
+    for (let s of specials) {
+      if ((s[0].test(ds) && (!s[2] || condCheck(s[2])))
+  {{- if .Devel -}}
+        || location.hash.match(s[1])
+  {{- end -}}
+      ) {
+        var link  = document.createElement("link");
+        link.rel  = "stylesheet";
+        link.type = "text/css";
+        link.href = "/.static/" + s[1];
+        document.head.appendChild(link);
+      }
+    }
+
   {{ if .IPv4 }}
     ipv4details("{{.IPv4}}");
-    stats.default = 4;
   {{ else }}
     ipv6details("{{.IPv6}}");
-    stats.default = 6;
   {{ end }}
 
     fetch("//{{ if .IPv4 }}{{ .V6Host }}{{ else }}{{ .V4Host }}{{ end }}", {
@@ -750,11 +783,9 @@
         if (/:/.test(ip)) {
           ipv6details(ip);
           ipv6 = ip;
-          stats.other = 6;
         } else {
           ipv4details(ip);
           ipv4 = ip;
-          stats.other = 4;
         }
       })
       .catch(error => {

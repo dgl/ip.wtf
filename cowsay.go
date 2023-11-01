@@ -75,7 +75,7 @@ func cowsay(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 
 func cowsayText(align int, text, template, proto string) string {
 	var o strings.Builder
-	// VTE / iTerm2 URL escape.
+	// OSC8 URL escape.
 	template = strings.Replace(template, "ip.wtf", "\x1b]8;;http://ip.wtf\aip.wtf\x1b]8;;\a", 1)
 	template = strings.Replace(template, "xx", proto, 1)
 	n := align - 4 - len(text)

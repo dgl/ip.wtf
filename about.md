@@ -99,6 +99,13 @@ This site does not use cookies, or store data on your device.
 This product includes GeoLite2 data created by MaxMind, available from
 <a href="https://www.maxmind.com">https://www.maxmind.com</a>.
 
+On Windows the flag emojis are provided by Twemoji, via <a
+href="https://github.com/talkjs/country-flag-emoji-polyfill">country-flag-emoji-polyfill<a>,
+via <a
+href="https://github.com/mozilla/twemoji-colr/blob/master/LICENSE.md">Mozilla's
+Twemoji-colr</a> used under CC-BY-4.0; Copyright 2019 Twitter, Inc and other
+contributors.
+
 ## Sponsor
 
 If you like this, you can say thank you:

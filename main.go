@@ -166,10 +166,10 @@ func hostRouter(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
 }
 
 func Reverse(s string) (result string) {
-  for _,v := range s {
-    result = string(v) + result
-  }
-  return
+	for _, v := range s {
+		result = string(v) + result
+	}
+	return
 }
 
 func connWrap(handler func(w http.ResponseWriter, req *http.Request, conn *RecordingConn)) func(http.ResponseWriter, *http.Request) {
@@ -253,14 +253,14 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		"TLSCipher":    sslCipher,
 		"RequestCount": rConn.read.count,
 		"Request":      string(rConn.read.read),
-		"Path":      req.URL.Path,
+		"RawRequest":         req,
 		"Host":         *flagHost,
 		"V4Host":       *flagV4Host,
 		"V6Host":       *flagV6Host,
 		"DNSHost":      ".dns." + *flagHost,
 		"DNSID":        dnsID.String(),
-		"Spider":       req.Header.Get("From") != "",
 		"NodeLocation": *flagLocation,
+		"Devel":        len(*flagLocation) == 0,
 	})
 
 	if err != nil {
