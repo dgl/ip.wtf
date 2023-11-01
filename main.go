@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -37,7 +38,7 @@ var (
 	flagV6Host         = flag.String("v6-host", "[::1]:8080", "Host for IPv6 access")
 	flagMaxMindDB      = flag.String("maxmind-db", "GeoLite2-City.mmdb", "MaxMind IP database")
 	flagMaxMindDBASN   = flag.String("maxmind-db-asn", "GeoLite2-ASN.mmdb", "MaxMind IP database for ASN")
-	flagAllowedMetrics = flag.String("allowed-metrics", "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,::1/128", "IPs allowed to fetch metrics")
+	flagAllowedMetrics = flag.String("allowed-metrics", "127.0.0.0/8,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8,::1/128", "IPs allowed to fetch metrics")
 	flagProxySupport   = flag.Bool("proxy-protocol", false, "Enable proxy protocol support on listener")
 	flagLocation       = flag.String("location", "", "Location of this node")
 	flagVersion        = flag.Bool("version", false, "Display version")
@@ -62,7 +63,7 @@ func init() {
 var mmDB *geoip2.Reader
 var mmDBASN *geoip2.Reader
 
-var ipTmpl = template.Must(template.ParseFiles("ip.html"))
+var ipTmpl = template.Must(template.ParseFS(content, "ip.html"))
 
 // RecordingListener wraps a net.Listener and wraps the resulting accepted
 // connections in a RecordingConn.
@@ -376,6 +377,7 @@ func main() {
 			log.Panic("No buildinfo available")
 		}
 		fmt.Fprintf(os.Stderr, "https://%v version: %v\n", info.Main.Path, info.Main.Version)
+		os.Exit(0)
 	}
 
 	reg := prometheus.DefaultRegisterer
@@ -420,12 +422,13 @@ func main() {
 		IdleTimeout:    60 * time.Second,
 	}
 
+	http.HandleFunc("/metrics", connWrap(handleMetrics))
+	http.HandleFunc("/healthz", connWrap(healthz))
+
 	handler := func(path string, f http.HandlerFunc) {
 		http.HandleFunc(path, methodFilter(promhttp.InstrumentHandlerCounter(
 			httpRequests.MustCurryWith(prometheus.Labels{"handler": path}), f)))
 	}
-
-	fs := http.FileServer(http.Dir("static"))
 
 	http.Handle("/", gziphandler.GzipHandler(
 		methodFilter(promhttp.InstrumentHandlerCounter(
@@ -433,15 +436,17 @@ func main() {
 			http.HandlerFunc(connWrap(hostRouter))))))
 	handler("/cowsay", connWrap(cowsay))
 	handler("/moo", connWrap(cowsay))
+	handler("/about", connWrap(about))
+	handler("/fun", connWrap(fun))
+	handler("/fun/", connWrap(funThing))
 	handler("/sh", connWrap(funThing))
 	handler("/fun/reverse", connWrap(ip))
-	handler("/.static/", connWrap(fsWrap(http.StripPrefix("/.static/", fs))))
 
-	http.HandleFunc("/metrics", connWrap(handleMetrics))
-	http.HandleFunc("/healthz", connWrap(healthz))
-	http.HandleFunc("/about", connWrap(about))
-	http.HandleFunc("/fun", connWrap(fun))
-	http.HandleFunc("/fun/", connWrap(funThing))
+	staticFS, err := fs.Sub(content, "static")
+	if err != nil {
+		log.Fatal(err)
+	}
+	handler("/.static/", connWrap(fsWrap(http.StripPrefix("/.static/", http.FileServer(http.FS(staticFS))))))
 
 	go dnsServe()
 

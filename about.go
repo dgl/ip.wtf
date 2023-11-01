@@ -7,7 +7,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/yuin/goldmark"
@@ -15,7 +14,7 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 )
 
-var pageTmpl = template.Must(template.ParseFiles("page.html"))
+var pageTmpl = template.Must(template.ParseFS(content, "page.html"))
 
 func about(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	renderPage("about.md", w, req, rConn)
@@ -31,7 +30,7 @@ func renderPage(page string, w http.ResponseWriter, req *http.Request, rConn *Re
 	w.Header().Add("X-Super-Cow-Powers", "curl "+*flagHost+"/moo")
 	w.Header().Add("Cache-Control", "no-store")
 
-	f, err := os.Open(page)
+	f, err := content.Open(page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -88,8 +87,6 @@ func funThing(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 
 	page := s[len(s)-1]
 
-	// Go validates Path but we'll make sure it's just simple characters as we
-	// directly serve it here.
 	for _, r := range page {
 		if r < 'a' || r > 'z' {
 			http.Error(w, "Not found", http.StatusNotFound)
@@ -97,5 +94,17 @@ func funThing(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		}
 	}
 
-	http.ServeFile(w, req, fmt.Sprintf("fun/%s.html", page))
+	name := fmt.Sprintf("fun/%s.html", page)
+	f, err := content.Open(name)
+	if err != nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	fi, _ := f.Stat()
+	ff, ok := f.(io.ReadSeeker)
+	if !ok {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	http.ServeContent(w, req, name, fi.ModTime(), ff)
 }
