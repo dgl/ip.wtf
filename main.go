@@ -1,8 +1,9 @@
 // Binary ip.wtf provides a server that reports the IP address of the client.
 package main
 
-// ©2022 David Leadbeater <https://dgl.cx/0bsd>
+// ©David Leadbeater <https://dgl.cx/0bsd>
 // SPDX-License-Identifier: 0BSD
+
 
 import (
 	"context"
@@ -10,11 +11,14 @@ import (
 	"encoding/base32"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -36,6 +40,7 @@ var (
 	flagAllowedMetrics = flag.String("allowed-metrics", "127.0.0.0/8,192.168.0.0/16,10.0.0.0/8,::1/128", "IPs allowed to fetch metrics")
 	flagProxySupport   = flag.Bool("proxy-protocol", false, "Enable proxy protocol support on listener")
 	flagLocation       = flag.String("location", "", "Location of this node")
+	flagVersion        = flag.Bool("version", false, "Display version")
 )
 
 var allowedMetrics []net.IPNet
@@ -253,7 +258,7 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		"TLSCipher":    sslCipher,
 		"RequestCount": rConn.read.count,
 		"Request":      string(rConn.read.read),
-		"RawRequest":         req,
+		"RawRequest":   req,
 		"Host":         *flagHost,
 		"V4Host":       *flagV4Host,
 		"V6Host":       *flagV6Host,
@@ -364,6 +369,17 @@ func fsWrap(f http.Handler) func(w http.ResponseWriter, req *http.Request, conn 
 
 func main() {
 	flag.Parse()
+
+	if *flagVersion {
+		info, ok := debug.ReadBuildInfo()
+		if !ok {
+			log.Panic("No buildinfo available")
+		}
+		fmt.Fprintf(os.Stderr, "https://%v version: %v\n", info.Main.Path, info.Main.Version)
+	}
+
+	reg := prometheus.DefaultRegisterer
+	reg.MustRegister(prometheus.NewBuildInfoCollector())
 
 	var err error
 	mmDB, err = geoip2.Open(*flagMaxMindDB)
