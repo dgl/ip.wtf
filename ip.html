@@ -18,9 +18,10 @@
       {{- end -}}
     {{- end -}}
   {{- else -}}
-    WTF is my IP⁉️
+    WTF is my IP address⁉️
   {{- end -}}
 </title>
+<meta name="description" content="Tells you what your IP addresses (IPv4 and IPv6) are, plus HTTP connection, DNS and browser details.">
 <style>
   body {
     margin: 0;
@@ -248,7 +249,7 @@
     "REFUSED", "YXDOMAIN", "XRRSET", "NOTAUTH", "NOTZONE"];
 
   async function resolve(name, type="PTR") {
-    return fetch("https://dns.google/resolve?name=" + encodeURIComponent(name)  + "&type=" + type)
+    return fetch("https://{{ if .IPv4 }}8.8.8.8{{ else }}[2001:4860:4860::8888]{{ end }}/resolve?name=" + encodeURIComponent(name)  + "&type=" + type)
       .then(r => r.json());
   }
 
@@ -493,9 +494,14 @@
         }
         out.appendChild(document.createTextNode("Source IP address: "));
         let b = document.createElement("b");
-        b.textContent = ip + " ";
+        b.textContent = ip;
         b.title = desc.sdp;
+        b.addEventListener("dblclick", e => {
+          window.getSelection().selectAllChildren(e.srcElement);
+          e.preventDefault();
+        });
         out.appendChild(b);
+        out.appendChild(document.createTextNode(" "));
         let flag = document.createElement("span");
         flag.className = "country";
         out.appendChild(flag);
@@ -559,7 +565,7 @@
 
 <body>
   <header>
-    <div class="topemoji"><a href="/fun">⁉️</a></div>
+    <div class="topemoji"><a href="/fun">👻</a></div>
     <h1>WTF is my <a href="https://en.wikipedia.org/wiki/IP_address">IP address</a>?</h1>
   </header>
   <article>
@@ -569,7 +575,7 @@
         <div class="ipv4" id="ip">{{ .IPv4 }}</div>
       {{- else if .IPv6 }}
         You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>:
-        <div class="ipv6" id="ip">{{ .IPv6 }}</div>
+        <div class="ipv6" id="ip dblselect">{{ .IPv6 }}</div>
       {{- end }}
     </div>
 
@@ -581,7 +587,7 @@
     </div>
 
     <div id="extra-ip">
-      Your browser preferred using {{ if .IPv4 }}IPv4{{else}}IPv6{{end}} but you also have an <span id="other-ip"></span>
+      Your browser preferred using {{ if .IPv4 }}IPv4{{else}}IPv6{{end}} but you also have an <span id="other-ip dblselect"></span>
     </div>
 
     <div id="only-ip">
@@ -595,7 +601,7 @@
           <h3>IPv4 details</h3>
           <span class="country">⏳</span> <span class="city"></span>
           <br>
-          Reverse DNS: <span class="host">⏳</span>
+          Reverse DNS: <span class="host dblselect">⏳</span>
           <br>
           <abbr title="Autonomous System">AS</abbr><span class="asn"></span>
           ↝ <a href="https://bgp.tools/search?q={{.IPv4}}">More details on bgp.tools</a>
@@ -605,7 +611,7 @@
           <h3>IPv6 details</h3>
           <span class="country">⏳</span> <span class="city"></span>
           <br>
-          Reverse DNS: <span class="host">⏳</span>
+          Reverse DNS: <span class="host dblselect">⏳</span>
           <br>
           <abbr title="Autonomous System">AS</abbr><span class="asn"></span>
           ↝ <a href="https://bgp.tools/search?q={{.IPv6}}">More details on bgp.tools</a>
@@ -798,5 +804,12 @@
           details.classList.add('hidden');
         }
       });
+
+      for (let el of [...document.querySelectorAll(".dblselect")]) {
+        el.addEventListener("dblclick", e => {
+          window.getSelection().selectAllChildren(el);
+          e.preventDefault();
+        });
+      }
   </script>
 </body>
