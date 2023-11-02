@@ -1,6 +1,6 @@
 # ip.wtf
 
-The code behind http://ip.wtf
+The code behind https://ip.wtf
 
 ## Using
 
@@ -36,10 +36,20 @@ Use http://localhost:8080
 
 ### Production
 
+Something like:
+
 ```sh
-sudo setcap cap_net_bind_service=+ep ./ipdcx
-./ipdcx -listen :http -v4-host v4.ip.d.cx -v6-host v6.ip.d.cx
+$ docker run --name=ip.wtf -d --net=host ghcr.io/dgl/ip.wtf:latest
+$ curl localhost:8080
+127.0.0.1
 ```
+
+In reality you'll need a few more pieces for a full production setup:
+
+- Put haproxy in front of this and enable the PROXY
+  protocol support, see
+  https://dgl.cx/2022/04/showing-you-your-actual-http-request
+- Provide the MaxMind database files in /data, e.g. add `-v db:/data`
 
 ## Licence
 
