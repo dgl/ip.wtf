@@ -96,6 +96,8 @@ otherwise share the data with us (e.g. send us an email, etc.).
 
 This site does not use cookies, or store data on your device.
 
+## Licenses
+
 This product includes GeoLite2 data created by MaxMind, available from
 <a href="https://www.maxmind.com">https://www.maxmind.com</a>.
 
@@ -106,9 +108,13 @@ href="https://github.com/mozilla/twemoji-colr/blob/master/LICENSE.md">Mozilla's
 Twemoji-colr</a> used under CC-BY-4.0; Copyright 2019 Twitter, Inc and other
 contributors.
 
+The site itself is available under the 0BSD licence, see <a
+href="http://©.st/dgl">http://©.st/dgl</a>.
+
 ## Sponsor
 
-If you like this, you can say thank you:
+This site is open source, <a href="https://github.com/dgl/ip.wtf">contributions
+welcome</a>. If you like this, you can say thank you:
 [ko-fi.com/webgl](https://ko-fi.com/webgl). See <a href="https://dgl.c&#x78;/"
 id="me">dgl.cx</a> for more on my projects.
 

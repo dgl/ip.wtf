@@ -56,4 +56,4 @@ In reality you'll need a few more pieces for a full production setup:
 This product includes GeoLite2 data created by MaxMind, available from
 <a href="https://www.maxmind.com">https://www.maxmind.com</a>.
 
-Otherwise; 0BSD, no warranty. https://dgl.cx/0bsd
+Otherwise; 0BSD, no warranty. http://©.st/dgl

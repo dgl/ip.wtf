@@ -1,9 +1,8 @@
 // Binary ip.wtf provides a server that reports the IP address of the client.
 package main
 
-// ©David Leadbeater <https://dgl.cx/0bsd>
+// © David Leadbeater <http://©.st/dgl>
 // SPDX-License-Identifier: 0BSD
-
 
 import (
 	"context"
