@@ -65,6 +65,18 @@
     width: 93%;
   }
 
+  pre code {
+    display: block;
+    color: #333;
+    background-color: #f9f9f9;
+    border-color: #eee;
+    padding: 4px 6px;
+    border: 1px solid;
+    border-left-width: 20px;
+    line-height: 1.1;
+    overflow: auto;
+  }
+
   @media only screen and (min-width: 768px) {
     article {
       width: 60%;
@@ -229,6 +241,12 @@
 
     a {
       color: #ccf;
+    }
+
+    pre code {
+      color: #ddd;
+      background-color: #333;
+      border-color: #555;
     }
   }
 {{ if eq (.RawRequest.Header.Get "Sec-CH-UA-Platform") "\"Windows\"" }}
@@ -697,6 +715,32 @@
       </div>
       <script>
         establishWebRTC("#webrtc-details");
+      </script>
+    </div>
+
+    <div class="details">
+      <h3>ip.wtf API</h3>
+      <div id="api-details">
+        <p>You can query your IP address from the command line with the API:
+<pre><code>$ <span class="dblselect">curl ip.wtf</span>
+<span id="your-ip">[your IP]</span></code></pre>
+
+<script>
+  let d = ipDetails["{{ if .IPv4 }}{{.IPv4}}{{ else }}{{.IPv6}}{{ end }}"];
+  document.querySelector("#your-ip").textContent = d.ip;
+</script>
+
+<p>Or in JSON:</p>
+
+<pre><code>$ <span class="dblselect">curl --json "" ip.wtf</span>
+<span id="json-output"></span></code></pre>
+<script>
+  document.querySelector("#json-output").textContent = JSON.stringify(d, "", "  ");
+</script>
+        <br><a href="/about">More details...</a>
+      </div>
+      <script>
+
       </script>
     </div>
   </article>
