@@ -575,7 +575,7 @@
         <div class="ipv4" id="ip">{{ .IPv4 }}</div>
       {{- else if .IPv6 }}
         You're using <a href="https://en.wikipedia.org/wiki/IPv6">IPv6</a>:
-        <div class="ipv6" id="ip dblselect">{{ .IPv6 }}</div>
+        <div class="ipv6 dblselect" id="ip">{{ .IPv6 }}</div>
       {{- end }}
     </div>
 
@@ -731,7 +731,6 @@
     let today = new Date();
     let ds = (1+today.getMonth()) + "-" + today.getDate() + "-" + today.getDay() + "-" +
       (1+Math.floor(today.getDate() / 7));
-    // todo: add diwali, easter, chinese new year, etc...
     const specials = [
       [ /^2-14/, "vt.css" ],
       [ /^3-17/, "sp.css" ],
