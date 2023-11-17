@@ -304,20 +304,41 @@ func lookupIP(ip net.IP) (result *IPResult) {
 		if err != nil {
 			log.Printf("MaxMind lookup for %v: %v", shortIP, err)
 		} else {
-			result.Location.Continent = record.Continent.Code
-			result.Location.ContinentName = record.Continent.Names["en"]
-
-			result.Location.Country = record.Country.IsoCode
-			result.Location.CountryName = record.Country.Names["en"]
-
-			result.Location.City = record.City.Names["en"]
-
-			result.Location.Latitude = record.Location.Latitude
-			result.Location.Longitude = record.Location.Longitude
+			log.Printf("%#v", record)
+			log.Printf("%#v", record.Subdivisions)
+			log.Printf("%#v", record.Traits)
+			if record.Country.IsoCode != "" {
+				regionName := ""
+				region := ""
+				if len(record.Subdivisions) > 0 {
+					regionName = record.Subdivisions[len(record.Subdivisions)-1].Names["en"]
+					region = record.Subdivisions[len(record.Subdivisions)-1].IsoCode
+				}
+				result.Location = IPLocation{
+					Source:         mmDB.Metadata().DatabaseType,
+					Continent:      record.Continent.Code,
+					ContinentName:  record.Continent.Names["en"],
+					Country:        record.Country.IsoCode,
+					CountryName:    record.Country.Names["en"],
+					Region:         region,
+					RegionName:     regionName,
+					City:           record.City.Names["en"],
+					Latitude:       &record.Location.Latitude,
+					Longitude:      &record.Location.Longitude,
+					AccuracyRadius: &record.Location.AccuracyRadius,
+				}
+			} else {
+				result.Location = IPLocation{
+					Source: mmDB.Metadata().DatabaseType,
+				}
+			}
 
 			result.Location.Timezone.Name = record.Location.TimeZone
-			// TODO: add offset
-
+			tz, err := time.LoadLocation(record.Location.TimeZone)
+			if err == nil && len(record.Location.TimeZone) > 0 {
+				_, offset := time.Now().In(tz).Zone()
+				result.Location.Timezone.Offset = &offset
+			}
 		}
 	}
 
