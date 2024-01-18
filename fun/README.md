@@ -12,7 +12,7 @@ Easy! Copy emoji.html and adjust it to your liking. Then submit a PR for it!
 Because it's so simple you shouldn't need a web server, just open the file
 directly in your browser for development.
 
-These files should be self contained, i.e. you only add a HTML file to the
+These files should be self contained, i.e. you only add an HTML file to the
 repo, using inline JavaScript. Best practices be damned. If you need to use
 external code, pull it in via unpkg.com.
 
