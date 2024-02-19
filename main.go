@@ -304,9 +304,6 @@ func lookupIP(ip net.IP) (result *IPResult) {
 		if err != nil {
 			log.Printf("MaxMind lookup for %v: %v", shortIP, err)
 		} else {
-			log.Printf("%#v", record)
-			log.Printf("%#v", record.Subdivisions)
-			log.Printf("%#v", record.Traits)
 			if record.Country.IsoCode != "" {
 				regionName := ""
 				region := ""
