@@ -1,0 +1,7 @@
+# Run the binary using the final image, to catch a CGO binary using static
+# base, etc. (This costs an extra layer, but worth it.)
+RUN ["/app/ip.wtf", "-version"]
+
+CMD ["/app/ip.wtf", "-listen=:8080"]
+# For development tools.
+EXPOSE 8080
