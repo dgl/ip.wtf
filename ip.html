@@ -69,9 +69,8 @@
     display: block;
     color: #333;
     background-color: #f9f9f9;
-    border-color: #eee;
     padding: 4px 6px;
-    border: 1px solid;
+    border: 1px solid #eee;
     border-left-width: 20px;
     line-height: 1.1;
     overflow: auto;
@@ -246,7 +245,7 @@
     pre code {
       color: #ddd;
       background-color: #333;
-      border-color: #555;
+      border: 1px solid #555;
     }
   }
 {{ if eq (.RawRequest.Header.Get "Sec-CH-UA-Platform") "\"Windows\"" }}
