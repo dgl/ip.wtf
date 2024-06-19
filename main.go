@@ -163,7 +163,7 @@ func hostRouter(w http.ResponseWriter, req *http.Request, conn *RecordingConn) {
 		log.Printf("Bad request, weird path: %q", req.URL.Path)
 		http.Error(w, "Bad request", http.StatusBadRequest)
 	} else if ip := net.ParseIP(req.URL.Path[1:]); ip != nil {
-		ipDetails(w, req, conn)
+		ipDetails(w, req, conn, false)
 	} else {
 		log.Printf("Not found: %q", req.URL.Path)
 		http.Error(w, "Not found", http.StatusNotFound)
@@ -190,31 +190,47 @@ func connWrap(handler func(w http.ResponseWriter, req *http.Request, conn *Recor
 func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 
-	w.Header().Add("X-Super-Cow-Powers", "curl "+*flagHost+"/moo")
-	w.Header().Add("Cache-Control", "no-store")
+	ua := req.Header.Get("User-Agent")
+	curl := strings.Contains(ua, "curl/")
+	if !curl {
+		w.Header().Add("X-Super-Cow-Powers", "curl "+*flagHost+"/moo")
+		w.Header().Add("Cache-Control", "no-store")
+	}
 
 	switch resolveAccept(req) {
 	case Plain:
-		w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
+		if !curl {
+			w.Header().Add("Access-Control-Allow-Origin", "*")
+			w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
+		} else {
+			w.Header().Add("Trailer", "X-Escape, \x1b[G\x1b[K\x1b[F\x1b[10G\x1b[32m200\x1b[m")
+			w.Header().Add("X-Zz", "\x1b[G\x1b[K\x1b[F\x1b[K\x1b[F")
+		}
 		w.Write([]byte(remoteAddr.IP.String() + "\n"))
+		if curl {
+			ip := lookupIP(remoteAddr.IP)
+			var escape, emoji strings.Builder
+			for _, char := range ip.Location.Country {
+				emoji.WriteRune(rune(char) + 0x1F1A5)
+			}
+			escape.WriteString("\x1b[G\x1b[K")
+			escape.WriteString("\x1b[G\x1b[3A\x1b[M\x1b[B\x1b[1m\x1b[48;2;0;0;0m\x1b[38;2;255;255;255m\x1b#3")
+			escape.WriteString(remoteAddr.IP.String())
+			escape.WriteString("    ")
+			escape.WriteString(emoji.String())
+			escape.WriteString("\x1b[B\x1b[G\x1b#4")
+			escape.WriteString(remoteAddr.IP.String())
+			escape.WriteString("    ")
+			escape.WriteString(emoji.String())
+			escape.WriteString("\x1b[m\x1b[B")
+			w.Header().Set("X-Escape", escape.String())
+		}
 		return
 	case Json:
 		w.Header().Add("Access-Control-Allow-Origin", "*")
 		w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
 		req.URL.Path = "/" + remoteAddr.IP.String()
-		ipDetails(w, req, rConn)
-		return
-	}
-
-	if req.Host == "ip.d.cx" {
-		http.Redirect(w, req, "http://"+*flagHost, http.StatusMovedPermanently)
-		return
-	} else if req.Host == "v4.ip.d.cx" {
-		http.Redirect(w, req, "http://v4."+*flagHost, http.StatusMovedPermanently)
-		return
-	} else if req.Host == "v6.ip.d.cx" {
-		http.Redirect(w, req, "http://v6."+*flagHost, http.StatusMovedPermanently)
+		ipDetails(w, req, rConn, curl)
 		return
 	}
 
@@ -274,14 +290,18 @@ func ip(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 	}
 }
 
-func ipDetails(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
+func ipDetails(w http.ResponseWriter, req *http.Request, rConn *RecordingConn, curl bool) {
 	ip := net.ParseIP(req.URL.Path[1:])
 	if ip == nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(lookupIP(ip))
+	e := json.NewEncoder(w)
+	if curl {
+		e.SetIndent("", "  ")
+	}
+	err := e.Encode(lookupIP(ip))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

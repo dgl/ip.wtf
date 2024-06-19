@@ -750,7 +750,7 @@
     {{- end }}>
       <li><a href="/about">about</a>
       <li><a href="https://github.com/dgl/ip.wtf">github</a>
-      <li><a href="https://ko-fi.com/webgl">sponsor ☕️</a>
+      <li><a href="https://ko-fi.com/webgl" id="sponsor">sponsor ☕️</a>
     </ul>
   </footer>
 
@@ -802,6 +802,13 @@
         document.head.appendChild(link);
       }
     }
+
+    (function(sp) {
+      let d = new Date;
+      if (d.getHours() >= 17 && !condCheck(["AF", "BD", "KW", "LY", "MR", "PK", "OM", "PS", "QA", "SA", "SO", "SD", "YE"]))
+        sp.textContent = "sponsor 🍺";
+    })(document.querySelector("#sponsor"));
+
 
   {{ if .IPv4 }}
     ipv4details("{{.IPv4}}");
