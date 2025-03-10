@@ -141,7 +141,7 @@ ACCEPT:
 		}
 	}
 	ua := req.Header.Get("User-Agent")
-	if strings.Contains(ua, "curl/") || strings.Contains(ua, "Wget/") {
+	if strings.Contains(ua, "curl/") || strings.Contains(ua, "Wget/") || strings.Contains(ua, " WindowsPowerShell/") {
 		return Plain
 	}
 	if mode := req.Header.Get("Sec-Fetch-Mode"); mode == "cors" {
