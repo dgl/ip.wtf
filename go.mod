@@ -1,6 +1,8 @@
 module github.com/dgl/ip.wtf
 
-go 1.18
+go 1.23.0
+
+toolchain go1.23.6
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
