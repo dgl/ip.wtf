@@ -853,7 +853,8 @@
 
       for (let el of [...document.querySelectorAll(".dblselect")]) {
         el.addEventListener("dblclick", e => {
-          window.getSelection().selectAllChildren(el);
+          let bel = el.querySelector("b");
+          window.getSelection().selectAllChildren(bel ? bel : el);
           e.preventDefault();
         });
       }
