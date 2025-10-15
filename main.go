@@ -57,6 +57,7 @@ var (
 
 func init() {
 	prometheus.MustRegister(httpRequests)
+	SetFlagsFromEnv("", flag.CommandLine)
 }
 
 var mmDB *geoip2.Reader
