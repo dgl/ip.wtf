@@ -1,5 +1,6 @@
 h1::before, h1::after {
   content: " 🎄🎄 ";
+  font-style: normal;
 }
 
 h3::after {
