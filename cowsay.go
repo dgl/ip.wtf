@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"net/http"
 	"strings"
@@ -47,7 +47,7 @@ func cowsay(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 		remoteAddr := rConn.RemoteAddr().(*net.TCPAddr)
 		w.Write([]byte("\x1bc"))
 		basicTmpl := basicCow
-		if rand.Intn(9) <= 1 {
+		if rand.IntN(9) <= 1 {
 			basicTmpl = basicTux
 		}
 		w.Write([]byte(cowsayText(0, "What the fuck is my IP address?", basicTmpl, "")))
@@ -63,7 +63,7 @@ func cowsay(w http.ResponseWriter, req *http.Request, rConn *RecordingConn) {
 			ip = v4.String()
 			proto = "v4"
 		}
-		if rand.Intn(3) > 1 {
+		if rand.IntN(3) > 1 {
 			w.Write([]byte(cowsayText(0, fmt.Sprintf("It's fucking %v", ip), ipCow, proto)))
 		} else {
 			w.Write([]byte(cowsayText(50, fmt.Sprintf("It's fucking %v", ip), ipBCow, proto)))

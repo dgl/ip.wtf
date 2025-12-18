@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,10 +23,13 @@ type DNSData struct {
 
 var (
 	dnsListen = flag.String("dns-listen", ":8053", "Port to listen on for DNS server")
-  dnsIP = flag.String("dns-public-ip", "", "Public IP to return")
+	dnsIP     = flag.String("dns-public-ip", "", "Public IP to return")
 )
 
-var dnsMap = map[string]DNSData{}
+var (
+	dnsMap   = map[string]DNSData{}
+	dnsMapMu sync.RWMutex
+)
 
 func dnsHandler(w http.ResponseWriter, req *http.Request) {
 	host := strings.TrimSuffix(req.Host, ".")
@@ -33,7 +37,11 @@ func dnsHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Methods", "GET, OPTIONS, HEAD")
 
-	if m, ok := dnsMap[host]; ok {
+	dnsMapMu.RLock()
+	m, ok := dnsMap[host]
+	dnsMapMu.RUnlock()
+
+	if ok {
 		err := json.NewEncoder(w).Encode(m)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -81,11 +89,13 @@ func dnsServe() {
 			m.Answer = []dns.RR{rrx}
 		} else {
 			name := strings.TrimSuffix(r.Question[0].Name, ".")
+			dnsMapMu.Lock()
 			dnsMap[name] = DNSData{
 				IP:         w.RemoteAddr().String(),
 				EdnsSubnet: subnet,
 				Expire:     time.Now().Add(2 * time.Minute),
 			}
+			dnsMapMu.Unlock()
 			rr := MustNewRR(name + myAddrA)
 			m.Answer = []dns.RR{rr}
 		}
@@ -99,6 +109,22 @@ func dnsServe() {
 	if len(*dnsIP) == 0 {
 		return
 	}
+
+	// Periodically clean up expired DNS entries
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			now := time.Now()
+			dnsMapMu.Lock()
+			for k, v := range dnsMap {
+				if now.After(v.Expire) {
+					delete(dnsMap, k)
+				}
+			}
+			dnsMapMu.Unlock()
+		}
+	}()
 
 	go func() {
 		srv := &dns.Server{Addr: *dnsListen, Net: "udp"}
@@ -114,7 +140,7 @@ func dnsServe() {
 		}
 	}()
 
-	sig := make(chan os.Signal)
+	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	s := <-sig
 	log.Fatalf("Signal (%v) received, stopping\n", s)
