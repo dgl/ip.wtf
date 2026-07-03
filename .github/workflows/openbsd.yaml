@@ -44,6 +44,7 @@ jobs:
             ./$remote &
             sleep 2
             curl --json '' -s localhost:8080 | jq -r .ip
+            curl -s --user-agent Mozilla/5.0 localhost:8080 | xmllint --html - | grep -A1 'IPv4<'
             kill %1
             fg || :; [[ $? = 143 ]]" | tee out
-          grep -q 127.0.0.1 out
+          [[ $(grep -c 127.0.0.1 out) = 2 ]]
