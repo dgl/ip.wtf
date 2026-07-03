@@ -35,7 +35,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "${TEST_PUB}" > ~/.ssh/known_hosts
 
-          set -ex
+          set -exo pipefail
           remote="ip.wtf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           scp ip.wtf "${TEST_HOST}:${remote}"
           ssh "${TEST_HOST}" "trap 'rm -f ${remote}' EXIT
@@ -46,5 +46,5 @@ jobs:
             curl --json '' -s localhost:8080 | jq -r .ip
             curl -s --user-agent Mozilla/5.0 localhost:8080 | xmllint --html - | grep -A1 'IPv4<'
             kill %1
-            fg || :; [[ $? = 143 ]]" | tee out
+            fg || :" | tee out
           [[ $(grep -c 127.0.0.1 out) = 2 ]]
