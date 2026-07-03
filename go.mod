@@ -8,7 +8,7 @@ require (
 	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/pires/go-proxyproto v0.12.0
 	github.com/prometheus/client_golang v1.23.2
-	github.com/yuin/goldmark v1.4.13
+	github.com/yuin/goldmark v1.8.2
 	golang.org/x/sys v0.45.0
 )
 
