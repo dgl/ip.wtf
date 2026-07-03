@@ -1,8 +1,6 @@
 module github.com/dgl/ip.wtf
 
-go 1.23.0
-
-toolchain go1.23.6
+go 1.25.0
 
 require (
 	github.com/NYTimes/gziphandler v1.1.1
@@ -11,7 +9,7 @@ require (
 	github.com/pires/go-proxyproto v0.7.0
 	github.com/prometheus/client_golang v1.11.1
 	github.com/yuin/goldmark v1.4.12
-	golang.org/x/sys v0.31.0
+	golang.org/x/sys v0.45.0
 )
 
 require (
@@ -23,6 +21,6 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
-	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
