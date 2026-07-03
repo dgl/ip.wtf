@@ -14,10 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # we need full commit hashes to calcuate tags
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Build image
         run: docker buildx build --cache-to type=gha --cache-from type=gha -t image .
