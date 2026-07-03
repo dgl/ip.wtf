@@ -43,6 +43,6 @@ jobs:
             ./$remote -help
             ./$remote &
             sleep 2
-            curl --json "" -s localhost:8080 | jq -r .ip
+            curl --json '' -s localhost:8080 | jq -r .ip
             kill %1
-            fg"
+            fg || :; [[ $? = 143 ]]"
