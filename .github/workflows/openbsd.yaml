@@ -1,0 +1,36 @@
+name: OpenBSD
+on:
+  pull_request:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: test
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: stable
+
+      - name: Build
+        run: GOOS=openbsd GOARCH=amd64 go build
+
+      - name: Test
+        env:
+          TEST_HOST: ${{ secrets.TEST_HOST }}
+          TEST_KEY: ${{ secrets.TEST_KEY }}
+          TEST_PUB: ${{ secrets.TEST_PUB }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${TEST_KEY}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${TEST_PUB}" > ~/.ssh/known_hosts
+
+          remote="ip.wtf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          scp ip.wtf "${TEST_HOST}:${remote}"
+          ssh "${TEST_HOST}" "${remote} -help; rm -f ${remote}"
