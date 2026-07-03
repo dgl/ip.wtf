@@ -45,4 +45,5 @@ jobs:
             sleep 2
             curl --json '' -s localhost:8080 | jq -r .ip
             kill %1
-            fg || :; [[ $? = 143 ]]"
+            fg || :; [[ $? = 143 ]]" | tee out
+          grep -q 127.0.0.1 out
