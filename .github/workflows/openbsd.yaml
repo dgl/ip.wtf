@@ -38,4 +38,11 @@ jobs:
           set -ex
           remote="ip.wtf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           scp ip.wtf "${TEST_HOST}:${remote}"
-          ssh "${TEST_HOST}" "./${remote} -help; rm -f ${remote}"
+          ssh "${TEST_HOST}" "trap 'rm -f ${remote}' EXIT
+            set -mbxeuo pipefail
+            ./$remote -help
+            ./$remote &
+            sleep 2
+            curl --json "" -s localhost:8080 | jq -r .ip
+            kill %1
+            fg"
