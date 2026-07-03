@@ -3,9 +3,13 @@ on:
   pull_request:
   push:
 
+permissions: {}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     environment: test
 
     steps:
