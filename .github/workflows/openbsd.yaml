@@ -31,6 +31,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           echo "${TEST_PUB}" > ~/.ssh/known_hosts
 
+          set -ex
           remote="ip.wtf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           scp ip.wtf "${TEST_HOST}:${remote}"
-          ssh "${TEST_HOST}" "${remote} -help; rm -f ${remote}"
+          ssh "${TEST_HOST}" "./${remote} -help; rm -f ${remote}"
