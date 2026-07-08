@@ -9,7 +9,7 @@ require (
 	github.com/pires/go-proxyproto v0.12.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/yuin/goldmark v1.8.2
-	golang.org/x/sys v0.45.0
+	golang.org/x/sys v0.46.0
 )
 
 require (
