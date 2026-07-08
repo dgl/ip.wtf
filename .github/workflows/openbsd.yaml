@@ -54,6 +54,7 @@ jobs:
 
           set -exo pipefail
           remote="ip.wtf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          chmod +x ip.wtf
           scp ip.wtf "${TEST_HOST}:${remote}"
           ssh "${TEST_HOST}" "trap 'rm -f ${remote}' EXIT
             set -mbxeuo pipefail
