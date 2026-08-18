@@ -10,4 +10,4 @@ These are some fun alternative ways of showing your IP address.
 * [Reverse](/fun/reverse) - things seem a bit backwards here...
 
 Want to add something? See the docs on
-[GitHub](https://github.com/dgl/ip.wtf/blob/main/fun).
+[Codeberg](https://codeberg.org/ip-wtf/ip.wtf/src/branch/main/fun).

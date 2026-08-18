@@ -113,7 +113,7 @@ href="http://©.st/dgl">http://©.st/dgl</a>.
 
 ## Sponsor
 
-This site is open source, <a href="https://github.com/dgl/ip.wtf">contributions
+This site is open source, <a href="https://codeberg.org/ip-wtf/ip.wtf">contributions
 welcome</a>. If you like this, you can say thank you:
 [ko-fi.com/webgl](https://ko-fi.com/webgl). See <a href="https://dgl.c&#x78;/"
 id="me">dgl.cx</a> for more on my projects.
